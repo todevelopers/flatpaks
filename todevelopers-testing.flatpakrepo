@@ -1,0 +1,6 @@
+[Flatpak Repo]
+Title=todevelopers Flatpaks (testing)
+Url=https://todevelopers.github.io/flatpaks/repo-testing/
+Homepage=https://github.com/todevelopers/flatpaks
+Description=Prerelease Flatpak applications by todevelopers
+NoDeps=false
