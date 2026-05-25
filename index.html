@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>todevelopers Flatpaks</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;line-height:1.6;color:#222}
+    h1,h2{border-bottom:1px solid #eee;padding-bottom:.3rem}
+    code,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
+    code{background:#f4f4f4;padding:.1rem .4rem;border-radius:3px}
+    pre{background:#f4f4f4;padding:1rem;border-radius:5px;overflow-x:auto}
+    a{color:#0366d6}
+    .app{padding:1rem;border:1px solid #ddd;border-radius:6px;margin:1rem 0}
+    .app h3{margin-top:0}
+    .badge{display:inline-block;padding:.1rem .5rem;border-radius:10px;font-size:.85em;background:#f0f0f0}
+    .stable{background:#dcf3dc;color:#1a5d1a}
+    .testing{background:#fff3cd;color:#856404}
+  </style>
+</head>
+<body>
+  <h1>todevelopers Flatpaks</h1>
+  <p>Self-hosted Flatpak remote for applications by <a href="https://github.com/todevelopers">todevelopers</a>.</p>
+
+  <h2>Add the remote</h2>
+  <p>One-time setup:</p>
+  <pre>flatpak remote-add --if-not-exists --no-gpg-verify todevelopers \
+    https://todevelopers.github.io/flatpaks/todevelopers.flatpakrepo</pre>
+
+  <h2>Applications</h2>
+
+  <div class="app">
+    <h3>GSE Profiler</h3>
+    <p>GTK4 desktop application for managing, debugging, and profiling GNOME Shell extensions.</p>
+    <p><a href="https://github.com/todevelopers/gseprofiler">Source on GitHub</a></p>
+
+    <p><span class="badge stable">stable</span> (recommended):</p>
+    <pre>flatpak install todevelopers io.github.todevelopers.GseProfiler</pre>
+    <p>Or click: <a href="io.github.todevelopers.GseProfiler.flatpakref">io.github.todevelopers.GseProfiler.flatpakref</a></p>
+
+    <p><span class="badge testing">testing</span> (latest prerelease):</p>
+    <pre>flatpak install todevelopers io.github.todevelopers.GseProfiler//testing</pre>
+    <p>Or click: <a href="io.github.todevelopers.GseProfiler-testing.flatpakref">io.github.todevelopers.GseProfiler-testing.flatpakref</a></p>
+  </div>
+
+  <h2>Updates</h2>
+  <pre>flatpak update</pre>
+
+  <p style="margin-top:3rem;color:#666;font-size:.9em">
+    Not affiliated with Flathub. Hosted on GitHub Pages.
+  </p>
+</body>
+</html>

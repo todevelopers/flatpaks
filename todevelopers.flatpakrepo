@@ -1,0 +1,6 @@
+[Flatpak Repo]
+Title=todevelopers Flatpaks
+Url=https://todevelopers.github.io/flatpaks/repo/
+Homepage=https://github.com/todevelopers/flatpaks
+Description=Flatpak applications by todevelopers
+NoDeps=false

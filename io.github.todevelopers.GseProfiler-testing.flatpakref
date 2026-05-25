@@ -1,0 +1,8 @@
+[Flatpak Ref]
+Name=io.github.todevelopers.GseProfiler
+Branch=testing
+Title=GSE Profiler (testing)
+Url=https://todevelopers.github.io/flatpaks/repo/
+SuggestRemoteName=todevelopers
+RuntimeRepo=https://flathub.org/repo/flathub.flatpakrepo
+IsRuntime=false
