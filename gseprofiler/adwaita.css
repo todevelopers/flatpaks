@@ -1,0 +1,381 @@
+/* ============================================================================
+   Adwaita Design System — adwaita.css
+   Component primitives used across preview cards & UI kits.
+   Source-derived from libadwaita stylesheet (buttons, list, switch, headerbar,
+   entry, popover, card). Cosmetic re-creation only — not pixel-perfect to GTK
+   render but matches the spec.
+   ============================================================================ */
+
+@import "./colors_and_type.css";
+
+* { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; color: inherit; }
+
+/* ---------- Buttons ---------- *
+   .ad-button         — flat default (no fill, hover bg)
+   .ad-button.raised  — subtle elevation, used on toolbars
+   .ad-button.suggested-action   — accent-filled primary
+   .ad-button.destructive-action — red-filled
+   .ad-button.pill    — fully rounded ("Continue" CTA)
+   .ad-button.circular— round icon button
+   .ad-button.flat    — explicit flat (alias of default)
+   sizes: default 34, .compact 26, .large 44 */
+
+.ad-button {
+  --bg: transparent;
+  --fg: var(--window-fg-color);
+  --bg-hover: var(--hover-color);
+  --bg-active: var(--active-color);
+  appearance: none;
+  border: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-weight: 700;
+  font-size: var(--type-base);
+  line-height: 1;
+  padding: 0 12px;
+  height: 34px;
+  border-radius: var(--button-radius);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 120ms ease-out, box-shadow 120ms ease-out,
+    color 120ms ease-out, transform 60ms;
+  user-select: none;
+  white-space: nowrap;
+}
+.ad-button:hover { background: var(--bg-hover); }
+.ad-button:active { background: var(--bg-active); }
+.ad-button:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 1px;
+}
+.ad-button[disabled],
+.ad-button.disabled { opacity: var(--disabled-opacity); pointer-events: none; }
+
+.ad-button.raised {
+  --bg: var(--card-bg-color);
+  box-shadow: inset 0 0 0 1px var(--border-color),
+    0 1px 0 var(--card-shade-color);
+}
+.ad-button.suggested-action {
+  --bg: var(--accent-bg-color);
+  --fg: var(--accent-fg-color);
+  --bg-hover: color-mix(in srgb, var(--accent-bg-color) 92%, #000);
+  --bg-active: color-mix(in srgb, var(--accent-bg-color) 84%, #000);
+}
+.ad-button.destructive-action {
+  --bg: var(--destructive-bg-color);
+  --fg: var(--destructive-fg-color);
+  --bg-hover: color-mix(in srgb, var(--destructive-bg-color) 90%, #000);
+  --bg-active: color-mix(in srgb, var(--destructive-bg-color) 80%, #000);
+}
+.ad-button.pill { border-radius: var(--pill-radius); padding: 0 22px; }
+.ad-button.circular {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: var(--pill-radius);
+}
+.ad-button.large { height: 44px; padding: 0 18px; font-size: var(--type-md); }
+.ad-button.compact { height: 26px; padding: 0 8px; font-size: var(--type-sm); }
+.ad-button.osd {
+  background: rgb(0 0 0 / 70%);
+  color: rgb(255 255 255 / 90%);
+  border-radius: var(--osd-radius);
+}
+
+/* Linked button group (segmented) */
+.ad-linked { display: inline-flex; }
+.ad-linked > .ad-button { border-radius: 0; box-shadow: inset 0 0 0 1px var(--border-color); }
+.ad-linked > .ad-button + .ad-button { margin-left: -1px; }
+.ad-linked > .ad-button:first-child { border-top-left-radius: var(--button-radius); border-bottom-left-radius: var(--button-radius); }
+.ad-linked > .ad-button:last-child  { border-top-right-radius: var(--button-radius); border-bottom-right-radius: var(--button-radius); }
+.ad-linked > .ad-button.active {
+  background: var(--card-bg-color);
+  color: var(--accent-color);
+}
+
+/* ---------- Icons via mask ----------
+   Symbolic SVGs are #808080 — we paint them with currentColor via mask. */
+.ad-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+          mask: var(--icon-url) center / contain no-repeat;
+  flex: none;
+  vertical-align: -3px;
+}
+.ad-icon.lg { width: 24px; height: 24px; }
+.ad-icon.xl { width: 32px; height: 32px; }
+.ad-icon.xxl { width: 48px; height: 48px; }
+
+/* ---------- HeaderBar ---------- */
+.ad-headerbar {
+  display: flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 6px;
+  background: var(--headerbar-bg-color);
+  color: var(--headerbar-fg-color);
+  border-bottom: 1px solid var(--headerbar-shade-color);
+  gap: 6px;
+}
+.ad-headerbar .title { font-weight: 700; font-size: var(--type-base); }
+.ad-headerbar .subtitle { font-size: var(--type-sm); opacity: var(--dim-opacity); }
+.ad-headerbar .titles { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; min-width: 0; }
+.ad-headerbar .start, .ad-headerbar .end { display: flex; align-items: center; gap: 2px; }
+.ad-headerbar .windowcontrols { display: flex; gap: 8px; padding: 0 8px; }
+.ad-headerbar .windowcontrols .wc {
+  width: 22px; height: 22px; border-radius: 9999px;
+  background: rgb(0 0 6 / 12%);
+  display: grid; place-items: center;
+  cursor: pointer; border: 0;
+}
+.ad-headerbar .windowcontrols .wc:hover { background: rgb(0 0 6 / 22%); }
+:root[data-scheme="dark"] .ad-headerbar .windowcontrols .wc { background: rgb(255 255 255 / 15%); }
+
+/* ---------- Window shell ---------- */
+.ad-window {
+  border-radius: var(--window-radius);
+  overflow: clip;
+  background: var(--window-bg-color);
+  color: var(--window-fg-color);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 18%),
+    0 20px 60px -10px rgb(0 0 0 / 25%),
+    0 8px 20px -8px rgb(0 0 0 / 25%);
+}
+:root[data-scheme="dark"] .ad-window {
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 7%),
+    0 20px 60px -10px rgb(0 0 0 / 55%);
+}
+
+/* ---------- Entry / Search ---------- */
+.ad-entry {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 34px; padding: 0 12px;
+  background: var(--view-bg-color);
+  color: var(--view-fg-color);
+  border-radius: var(--button-radius);
+  box-shadow: inset 0 0 0 1px var(--border-color);
+  min-width: 200px;
+}
+.ad-entry:focus-within {
+  box-shadow: inset 0 0 0 2px var(--accent-color);
+}
+.ad-entry input {
+  flex: 1; border: 0; background: transparent; outline: none;
+  font-size: var(--type-base);
+  min-width: 0;
+}
+.ad-entry input::placeholder { color: var(--view-fg-color); opacity: var(--dim-opacity); }
+.ad-entry.search { background: var(--shade-color); box-shadow: none; }
+
+/* ---------- Switch (AdwSwitch) ---------- */
+.ad-switch {
+  --w: 44px; --h: 26px; --p: 3px;
+  position: relative; display: inline-block;
+  width: var(--w); height: var(--h); flex: none;
+}
+.ad-switch input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.ad-switch .track {
+  position: absolute; inset: 0;
+  background: var(--shade-color);
+  border-radius: 9999px;
+  transition: background-color 160ms ease-out;
+  box-shadow: inset 0 0 0 1px var(--border-color);
+}
+.ad-switch .thumb {
+  position: absolute; top: var(--p); left: var(--p);
+  width: calc(var(--h) - var(--p) * 2);
+  height: calc(var(--h) - var(--p) * 2);
+  background: #ffffff;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
+  transition: left 160ms ease-out, background-color 160ms;
+}
+.ad-switch input:checked + .track { background: var(--accent-bg-color); box-shadow: none; }
+.ad-switch input:checked + .track + .thumb { left: calc(var(--w) - var(--h) + var(--p)); }
+
+/* ---------- Checkbox & Radio ---------- */
+.ad-check {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  background: var(--view-bg-color);
+  box-shadow: inset 0 0 0 1px var(--border-color);
+  display: inline-grid; place-items: center;
+  flex: none;
+}
+.ad-check.checked { background: var(--accent-bg-color); box-shadow: none; }
+.ad-check.checked::after {
+  content: "";
+  width: 12px; height: 12px;
+  background: var(--accent-fg-color);
+  -webkit-mask: url("assets/icons/object-select-symbolic.svg") center / contain no-repeat;
+          mask: url("assets/icons/object-select-symbolic.svg") center / contain no-repeat;
+}
+.ad-radio {
+  width: 18px; height: 18px; border-radius: 9999px;
+  background: var(--view-bg-color);
+  box-shadow: inset 0 0 0 1px var(--border-color);
+  flex: none;
+  display: inline-grid; place-items: center;
+}
+.ad-radio.checked { background: var(--accent-bg-color); box-shadow: none; }
+.ad-radio.checked::after { content: ""; width: 8px; height: 8px; background: var(--accent-fg-color); border-radius: 9999px; }
+
+/* ---------- Card & boxed list ---------- *
+   AdwPreferencesGroup / .boxed-list: a single rounded shell containing rows
+   separated by hairlines. Rows themselves do NOT round. */
+.ad-card {
+  background: var(--card-bg-color);
+  border-radius: var(--card-radius);
+  box-shadow: 0 0 0 1px var(--card-shade-color);
+  overflow: clip;
+}
+.ad-boxed-list { background: var(--card-bg-color); border-radius: var(--card-radius); box-shadow: 0 0 0 1px var(--card-shade-color); overflow: clip; }
+.ad-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  min-height: 50px;
+  background: transparent;
+  cursor: default;
+}
+.ad-row + .ad-row { border-top: 1px solid var(--card-shade-color); }
+.ad-row.activatable { cursor: pointer; }
+.ad-row.activatable:hover { background: var(--hover-color); }
+.ad-row.activatable:active { background: var(--active-color); }
+.ad-row .row-text { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 1px; }
+.ad-row .row-title { font-size: var(--type-base); }
+.ad-row .row-subtitle { font-size: var(--type-sm); opacity: var(--dim-opacity); }
+.ad-row .row-suffix { display: flex; align-items: center; gap: 8px; color: inherit; opacity: var(--dim-opacity); }
+
+/* Boxed-list group title above the card */
+.ad-group-title { font-weight: 700; font-size: var(--type-base); padding: 0 14px 8px; }
+
+/* ---------- Sidebar / list ---------- */
+.ad-sidebar {
+  background: var(--sidebar-bg-color);
+  color: var(--sidebar-fg-color);
+  padding: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.ad-sidebar .ad-sidebar-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: var(--type-base);
+}
+.ad-sidebar .ad-sidebar-row:hover { background: var(--hover-color); }
+.ad-sidebar .ad-sidebar-row.selected { background: var(--selected-color); }
+.ad-sidebar .ad-sidebar-row.selected:hover { background: color-mix(in srgb, currentColor 13%, transparent); }
+.ad-sidebar .ad-sidebar-section-title {
+  font-size: var(--type-sm); font-weight: 700;
+  opacity: var(--dim-opacity);
+  padding: 12px 10px 4px;
+  text-transform: none;
+}
+
+/* ---------- Badge / tag ---------- */
+.ad-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 18px; min-width: 18px; padding: 0 6px;
+  border-radius: 9999px;
+  background: var(--shade-color);
+  font-size: var(--type-xs); font-weight: 700;
+}
+.ad-badge.accent { background: var(--accent-bg-color); color: var(--accent-fg-color); }
+.ad-badge.success { background: var(--success-bg-color); color: var(--success-fg-color); }
+.ad-badge.warning { background: var(--warning-bg-color); color: var(--warning-fg-color); }
+.ad-badge.error { background: var(--error-bg-color); color: var(--error-fg-color); }
+
+/* ---------- Popover ---------- */
+.ad-popover {
+  background: var(--popover-bg-color);
+  color: var(--popover-fg-color);
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px var(--popover-shade-color),
+    0 10px 30px -8px rgb(0 0 0 / 30%);
+  padding: 6px;
+  min-width: 220px;
+}
+.ad-menu-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: var(--type-base);
+}
+.ad-menu-item:hover { background: var(--hover-color); }
+.ad-menu-item .accel { margin-left: auto; opacity: var(--dim-opacity); font-size: var(--type-sm); }
+.ad-menu-separator { height: 1px; background: var(--popover-shade-color); margin: 4px 2px; }
+
+/* ---------- Toast ---------- */
+.ad-toast {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 6px 6px 6px 16px;
+  background: #505053; color: #ffffff;
+  border-radius: 9999px;
+  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 35%);
+  font-size: var(--type-base);
+}
+
+/* ---------- Banner / InfoBar ---------- */
+.ad-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: var(--accent-bg-color); color: var(--accent-fg-color);
+  font-weight: 500;
+}
+.ad-banner.warning { background: var(--warning-bg-color); color: var(--warning-fg-color); }
+.ad-banner.error { background: var(--error-bg-color); color: var(--error-fg-color); }
+.ad-banner.success { background: var(--success-bg-color); color: var(--success-fg-color); }
+
+/* ---------- Tabs (AdwTabBar) ---------- */
+.ad-tabbar {
+  display: flex; gap: 4px;
+  padding: 6px 6px 0;
+  background: var(--headerbar-bg-color);
+  border-bottom: 1px solid var(--headerbar-shade-color);
+}
+.ad-tab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; height: 30px;
+  border-radius: 6px 6px 0 0;
+  font-size: var(--type-sm);
+  cursor: pointer;
+  color: var(--headerbar-fg-color);
+  opacity: 0.7;
+}
+.ad-tab:hover { background: var(--hover-color); opacity: 1; }
+.ad-tab.active { background: var(--card-bg-color); opacity: 1; box-shadow: inset 1px 0 0 var(--border-color), inset -1px 0 0 var(--border-color), inset 0 1px 0 var(--border-color); }
+
+/* ---------- Progress / Spinner ---------- */
+.ad-progress {
+  height: 4px; background: var(--shade-color); border-radius: 9999px; overflow: hidden;
+}
+.ad-progress > i { display: block; height: 100%; background: var(--accent-bg-color); border-radius: inherit; }
+.ad-spinner {
+  width: 16px; height: 16px; border-radius: 9999px;
+  border: 2px solid var(--shade-color);
+  border-top-color: var(--accent-color);
+  animation: ad-spin 0.9s linear infinite;
+}
+@keyframes ad-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Layout helpers (for cards) ---------- */
+.swatch {
+  width: 100%; aspect-ratio: 1.2; border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 10%);
+}
+.stack { display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; align-items: center; gap: 8px; }
+.row.wrap { flex-wrap: wrap; }

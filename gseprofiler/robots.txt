@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://todevelopers.github.io/flatpaks/gseprofiler/sitemap.xml

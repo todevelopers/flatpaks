@@ -1,0 +1,340 @@
+/* ============================================================================
+   Adwaita Design System — colors_and_type.css
+   Source of truth: libadwaita @main /src/stylesheet/_colors.scss (Light + Dark)
+   ============================================================================
+   This is a faithful port of libadwaita's named colors to CSS custom
+   properties. Library code uses GTK's @define-color named colors that GTK
+   re-emits as CSS variables — we collapse those into ordinary :root variables
+   here, with the dark variant under [data-scheme="dark"].
+   ============================================================================ */
+
+/* ---------- 1. Fonts ----------
+   GNOME 48 ships Adwaita Sans as the default UI font (it replaced Cantarell).
+   Adwaita Sans is self-hosted from uploaded files; Cantarell is kept as a
+   fallback via Google Fonts. Monospace falls back to the Linux system stack. */
+@font-face {
+  font-family: "Adwaita Sans";
+  src: url("fonts/AdwaitaSans-Regular.ttf") format("truetype");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Adwaita Sans";
+  src: url("fonts/AdwaitaSans-Italic.ttf") format("truetype");
+  font-weight: 400 800;
+  font-style: italic;
+  font-display: swap;
+}
+@import url("https://fonts.googleapis.com/css2?family=Cantarell:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap");
+
+/* Adwaita Mono — GNOME's default monospace, self-hosted (4 cuts). */
+@font-face {
+  font-family: "Adwaita Mono";
+  src: url("fonts/AdwaitaMono-Regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Adwaita Mono";
+  src: url("fonts/AdwaitaMono-Italic.ttf") format("truetype");
+  font-weight: 400; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Adwaita Mono";
+  src: url("fonts/AdwaitaMono-Bold.ttf") format("truetype");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Adwaita Mono";
+  src: url("fonts/AdwaitaMono-BoldItalic.ttf") format("truetype");
+  font-weight: 700; font-style: italic; font-display: swap;
+}
+
+:root {
+  --font-sans: "Adwaita Sans", "Cantarell", system-ui, -apple-system,
+    "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-mono: "Adwaita Mono", ui-monospace, "JetBrains Mono", "Source Code Pro",
+    Menlo, Consolas, monospace;
+  --font-emoji: "Adwaita Sans", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+
+  /* GTK/Adwaita uses pt for its default font size; 11pt ~= 14.667px @ 96dpi.
+     We expose px-based sizes that match the HIG body & control labels. */
+  --type-xs: 11px;    /* caption-2 — tooltips, badges */
+  --type-sm: 12px;    /* caption / .caption — secondary metadata */
+  --type-base: 14px;  /* body  / .body — default app text */
+  --type-md: 16px;    /* heading / .heading — list-row primary */
+  --type-lg: 20px;    /* title-4 — boxed-list group title */
+  --type-xl: 24px;    /* title-3 */
+  --type-2xl: 32px;   /* title-2 — page title in HeaderBar */
+  --type-3xl: 40px;   /* title-1 — onboarding hero */
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.45;
+
+  /* GTK strips letter-spacing from Cantarell. Adwaita Sans uses -0.01em on titles. */
+  --tracking-title: -0.01em;
+  --tracking-caption: 0;
+}
+
+/* ---------- 2. Light scheme (default) ---------- */
+:root,
+:root[data-scheme="light"] {
+  color-scheme: light;
+
+  /* Accent palette — selectable in Settings. Defaults to Blue. */
+  --accent-blue: #3584e4;
+  --accent-teal: #2190a4;
+  --accent-green: #3a944a;
+  --accent-yellow: #c88800;
+  --accent-orange: #ed5b00;
+  --accent-red: #e62d42;
+  --accent-pink: #d56199;
+  --accent-purple: #9141ac;
+  --accent-slate: #6f8396;
+
+  /* Active accent: copy one of the above into these two.
+     bg = button fill; fg = label on top of bg. */
+  --accent-bg-color: var(--accent-blue);
+  --accent-fg-color: #ffffff;
+  /* Standalone accent for links & focused labels; darker version of bg. */
+  --accent-color: #0461be;
+
+  /* Status colors — bg/fg are AAA-paired. */
+  --destructive-bg-color: #e01b24;
+  --destructive-fg-color: #ffffff;
+  --destructive-color: #c00f1a;
+
+  --success-bg-color: #2ec27e;
+  --success-fg-color: #ffffff;
+  --success-color: #1c8048;
+
+  --warning-bg-color: #e5a50a;
+  --warning-fg-color: rgb(0 0 0 / 80%);
+  --warning-color: #905400;
+
+  --error-bg-color: #e01b24;
+  --error-fg-color: #ffffff;
+  --error-color: #c00f1a;
+
+  /* Window — the root chrome behind everything. */
+  --window-bg-color: #fafafb;
+  --window-fg-color: rgb(0 0 6 / 80%);
+
+  /* Views — text views, list views, the "content" surface. */
+  --view-bg-color: #ffffff;
+  --view-fg-color: rgb(0 0 6 / 80%);
+
+  /* HeaderBar — the top window strip. */
+  --headerbar-bg-color: #ffffff;
+  --headerbar-fg-color: rgb(0 0 6 / 80%);
+  --headerbar-border-color: rgb(0 0 6 / 80%);
+  --headerbar-backdrop-color: var(--window-bg-color);
+  --headerbar-shade-color: rgb(0 0 6 / 12%);
+  --headerbar-darker-shade-color: rgb(0 0 6 / 12%);
+
+  /* Sidebar (e.g. Files places list) */
+  --sidebar-bg-color: #ebebed;
+  --sidebar-fg-color: rgb(0 0 6 / 80%);
+  --sidebar-backdrop-color: #f2f2f4;
+  --sidebar-border-color: rgb(0 0 6 / 7%);
+  --sidebar-shade-color: rgb(0 0 6 / 7%);
+
+  /* Secondary sidebar (the second column in 3-pane layouts) */
+  --secondary-sidebar-bg-color: #f3f3f5;
+  --secondary-sidebar-fg-color: rgb(0 0 6 / 80%);
+  --secondary-sidebar-backdrop-color: #f6f6fa;
+  --secondary-sidebar-border-color: rgb(0 0 6 / 7%);
+  --secondary-sidebar-shade-color: rgb(0 0 6 / 7%);
+
+  /* Cards & boxed lists (.card, .boxed-list) */
+  --card-bg-color: #ffffff;
+  --card-fg-color: rgb(0 0 6 / 80%);
+  --card-shade-color: rgb(0 0 6 / 7%);
+
+  /* Dialogs (AdwDialog content) */
+  --dialog-bg-color: #fafafb;
+  --dialog-fg-color: rgb(0 0 6 / 80%);
+
+  /* Popovers (menus, popup forms) */
+  --popover-bg-color: #ffffff;
+  --popover-fg-color: rgb(0 0 6 / 80%);
+  --popover-shade-color: rgb(0 0 6 / 7%);
+
+  /* Misc */
+  --shade-color: rgb(0 0 6 / 7%);
+  --scrollbar-outline-color: #ffffff;
+  --border-color: rgb(0 0 6 / 15%);
+  --border-opacity: 15%;
+  --dim-opacity: 55%;
+  --disabled-opacity: 50%;
+
+  /* Derived overlays used everywhere in libadwaita */
+  --hover-color: rgb(0 0 6 / 7%);
+  --active-color: rgb(0 0 6 / 16%);
+  --selected-color: rgb(0 0 6 / 10%);
+  --focus-ring-color: color-mix(in srgb, var(--accent-color) 50%, transparent);
+
+  /* Title-2 size convenience for HeaderBar window title */
+  --window-radius: 12px;       /* outer rounded corners */
+  --card-radius: 12px;         /* AdwPreferencesGroup card */
+  --row-radius: 0px;           /* rows inside boxed-list (sharp) */
+  --button-radius: 6px;
+  --pill-radius: 9999px;
+  --osd-radius: 9px;
+}
+
+/* ---------- 3. Dark scheme ---------- */
+:root[data-scheme="dark"] {
+  color-scheme: dark;
+
+  --accent-bg-color: #78aeed;   /* lighter accent in dark mode */
+  --accent-fg-color: rgb(0 0 6 / 80%);
+  --accent-color: #99c1f1;
+
+  --destructive-bg-color: #ff7b63;
+  --destructive-fg-color: rgb(0 0 6 / 80%);
+  --destructive-color: #ff938c;
+
+  --success-bg-color: #8ff0a4;
+  --success-fg-color: rgb(0 0 6 / 80%);
+  --success-color: #8ff0a4;
+
+  --warning-bg-color: #cd9309;
+  --warning-fg-color: rgb(0 0 6 / 80%);
+  --warning-color: #f8e45c;
+
+  --error-bg-color: #ff7b63;
+  --error-fg-color: rgb(0 0 6 / 80%);
+  --error-color: #ff938c;
+
+  --window-bg-color: #222226;
+  --window-fg-color: #ffffff;
+
+  --view-bg-color: #1d1d20;
+  --view-fg-color: #ffffff;
+
+  --headerbar-bg-color: #2e2e32;
+  --headerbar-fg-color: #ffffff;
+  --headerbar-border-color: #ffffff;
+  --headerbar-backdrop-color: var(--window-bg-color);
+  --headerbar-shade-color: rgb(0 0 6 / 36%);
+  --headerbar-darker-shade-color: rgb(0 0 12 / 90%);
+
+  --sidebar-bg-color: #2e2e32;
+  --sidebar-fg-color: #ffffff;
+  --sidebar-backdrop-color: #28282c;
+  --sidebar-border-color: rgb(0 0 6 / 36%);
+  --sidebar-shade-color: rgb(0 0 6 / 25%);
+
+  --secondary-sidebar-bg-color: #28282c;
+  --secondary-sidebar-fg-color: #ffffff;
+  --secondary-sidebar-backdrop-color: #252529;
+  --secondary-sidebar-border-color: rgb(0 0 6 / 36%);
+  --secondary-sidebar-shade-color: rgb(0 0 6 / 25%);
+
+  --card-bg-color: rgb(255 255 255 / 8%);
+  --card-fg-color: #ffffff;
+  --card-shade-color: rgb(0 0 6 / 36%);
+
+  --dialog-bg-color: #36363a;
+  --dialog-fg-color: #ffffff;
+
+  --popover-bg-color: #36363a;
+  --popover-fg-color: #ffffff;
+  --popover-shade-color: rgb(0 0 6 / 25%);
+
+  --shade-color: rgb(0 0 6 / 25%);
+  --scrollbar-outline-color: rgb(0 0 12 / 95%);
+  --border-color: rgb(255 255 255 / 15%);
+
+  --hover-color: rgb(255 255 255 / 7%);
+  --active-color: rgb(255 255 255 / 16%);
+  --selected-color: rgb(255 255 255 / 10%);
+}
+
+/* ---------- 4. Semantic typography classes — match HIG ---------- *
+   Adwaita defines these in libadwaita's _typography.scss style classes:
+     .title-1, .title-2, .title-3, .title-4
+     .heading
+     .body
+     .caption-heading, .caption
+     .numeric
+     .monospace
+   Use these classes anywhere — they are the canonical way to size text. */
+
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+  color: var(--window-fg-color);
+  background: var(--window-bg-color);
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.title-1 {
+  font-weight: 800; /* Adwaita Sans extra-bold for hero titles */
+  font-size: var(--type-3xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-title);
+}
+.title-2 {
+  font-weight: 800;
+  font-size: var(--type-2xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-title);
+}
+.title-3 {
+  font-weight: 700;
+  font-size: var(--type-xl);
+  line-height: var(--leading-snug);
+}
+.title-4 {
+  font-weight: 700;
+  font-size: var(--type-lg);
+  line-height: var(--leading-snug);
+}
+.heading {
+  font-weight: 700;
+  font-size: var(--type-base);
+  line-height: var(--leading-snug);
+}
+.body {
+  font-weight: 400;
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+}
+.caption-heading {
+  font-weight: 700;
+  font-size: var(--type-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.caption {
+  font-weight: 400;
+  font-size: var(--type-sm);
+  opacity: var(--dim-opacity);
+}
+.numeric { font-variant-numeric: tabular-nums; }
+.monospace { font-family: var(--font-mono); font-size: 13px; }
+.dim-label { opacity: var(--dim-opacity); }
+.error-label { color: var(--error-color); }
+.warning-label { color: var(--warning-color); }
+.success-label { color: var(--success-color); }
+.accent-label { color: var(--accent-color); }
+
+/* h1..h6 mapped to title scale for prose & demos */
+h1, .h1 { font-weight: 800; font-size: var(--type-3xl); line-height: 1.15; letter-spacing: -0.01em; }
+h2, .h2 { font-weight: 800; font-size: var(--type-2xl); line-height: 1.15; letter-spacing: -0.01em; }
+h3, .h3 { font-weight: 700; font-size: var(--type-xl); line-height: 1.3; }
+h4, .h4 { font-weight: 700; font-size: var(--type-lg); line-height: 1.3; }
+h5, .h5 { font-weight: 700; font-size: var(--type-md); line-height: 1.3; }
+h6, .h6 { font-weight: 700; font-size: var(--type-base); line-height: 1.3; }
+p, .p  { font-size: var(--type-base); line-height: var(--leading-normal); }
+small, .small { font-size: var(--type-sm); opacity: var(--dim-opacity); }
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: 0.93em;
+}

@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en" data-scheme="light">
+<head>
+<meta charset="utf-8">
+<title>GSE Profiler: profile GNOME Shell extensions as they run</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A developer toolkit for GNOME Shell extension authors and testers. Live function timing as a flamegraph, structured journal logs, and live object inspection from a native GTK4 interface.">
+<meta name="keywords" content="GNOME Shell, GNOME extensions, extension profiler, gnome-shell, flamegraph, GJS, libadwaita, GTK4, journalctl, Flatpak">
+<meta name="author" content="todevelopers">
+<meta name="theme-color" content="#3584e4">
+<link rel="canonical" href="https://todevelopers.github.io/flatpaks/gseprofiler/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GSE Profiler">
+<meta property="og:title" content="GSE Profiler: profile GNOME Shell extensions as they run">
+<meta property="og:description" content="A developer toolkit for GNOME Shell extension authors and testers. Live function timing, structured journal logs, and live object inspection from a native GTK4 interface.">
+<meta property="og:url" content="https://todevelopers.github.io/flatpaks/gseprofiler/">
+<meta property="og:image" content="https://todevelopers.github.io/flatpaks/gseprofiler/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="GSE Profiler showing a live recording in the Profiler view.">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GSE Profiler: profile GNOME Shell extensions as they run">
+<meta name="twitter:description" content="Live function timing, structured journal logs, and live object inspection for GNOME Shell extensions, from a native GTK4 interface.">
+<meta name="twitter:image" content="https://todevelopers.github.io/flatpaks/gseprofiler/assets/og-image.png">
+
+<link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/app/data/icons/hicolor/scalable/apps/io.github.todevelopers.GseProfiler.svg">
+
+<!-- Structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "GSE Profiler",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Linux, GNOME 47+",
+  "description": "A developer toolkit for GNOME Shell extension authors and testers. Live function timing, structured journal logs, and live object inspection from a native GTK4 interface.",
+  "url": "https://todevelopers.github.io/flatpaks/gseprofiler/",
+  "image": "https://todevelopers.github.io/flatpaks/gseprofiler/assets/og-image.png",
+  "softwareHelp": "https://github.com/todevelopers/gseprofiler",
+  "author": { "@type": "Organization", "name": "todevelopers" },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<link rel="stylesheet" href="adwaita.css">
+<style>
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--window-bg-color); }
+  ::selection { background: color-mix(in srgb, var(--accent-bg-color) 24%, transparent); }
+
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* Icons are inlined as SVG (mask-free) so they render in every renderer. */
+  .ad-icon { background-color: transparent !important; -webkit-mask: none !important; mask: none !important; }
+  .ad-icon svg { display: block; width: 100%; height: 100%; fill: currentColor; }
+
+  /* ---------- App icon placeholder tile ---------- */
+  .app-icon {
+    display: grid; place-items: center; flex: none;
+    background: var(--accent-bg-color); color: var(--accent-fg-color);
+    border-radius: 7px;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%), inset 0 1px 0 rgb(255 255 255 / 25%),
+      0 1px 2px rgb(0 0 0 / 18%);
+  }
+  .app-icon.sm { width: 30px; height: 30px; border-radius: 7px; }
+  .app-icon.lg { width: 76px; height: 76px; border-radius: 16px; }
+
+  .brand-icon { width: 30px; height: 30px; display: block; flex: none;
+    filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 18%)); }
+  .hero-icon { width: 88px; height: 88px; display: block; margin: 0 auto 26px;
+    filter: drop-shadow(0 8px 18px rgb(0 0 0 / 22%)); }
+
+  /* ---------- Header / nav ---------- */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--headerbar-bg-color) 86%, transparent);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--headerbar-shade-color);
+  }
+  .nav .bar { display: flex; align-items: center; gap: 12px; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .brand .name { font-size: var(--type-md); letter-spacing: -0.01em; }
+  .nav .links { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+  .nav .links a.navlink {
+    padding: 7px 12px; border-radius: var(--button-radius);
+    font-weight: 700; font-size: var(--type-base); color: var(--window-fg-color);
+    transition: background-color 120ms ease-out;
+  }
+  .nav .links a.navlink:hover { background: var(--hover-color); }
+  .nav .links .sep { width: 1px; height: 22px; background: var(--border-color); margin: 0 8px; }
+  @media (max-width: 720px) { .nav .links .navlink.hide-sm { display: none; } }
+
+  .btn-donate {
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 34px; padding: 0 16px; border-radius: var(--pill-radius);
+    background: var(--accent-bg-color); color: var(--accent-fg-color);
+    font-weight: 700; box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%);
+    transition: background-color 120ms ease-out;
+  }
+  .btn-donate:hover { background: color-mix(in srgb, var(--accent-bg-color) 90%, #000); }
+
+  /* ---------- Hero ---------- */
+  .hero { padding: 72px 0 36px; text-align: center; }
+  .pillbadge {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 30px; padding: 0 14px; border-radius: var(--pill-radius);
+    background: var(--card-bg-color); box-shadow: 0 0 0 1px var(--card-shade-color);
+    font-size: var(--type-sm); font-weight: 700;
+  }
+  .pillbadge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success-color); }
+  .hero h1 {
+    margin: 22px auto 0; max-width: none; font-size: clamp(32px, 5vw, 50px);
+    line-height: 1.08; letter-spacing: -0.02em; font-weight: 800; text-wrap: pretty;
+  }
+  .hero .lede {
+    margin: 20px auto 0; max-width: 60ch; font-size: clamp(16px, 1.7vw, 19px);
+    line-height: 1.5; opacity: 0.72; text-wrap: pretty;
+  }
+  .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    height: 46px; padding: 0 24px; border-radius: var(--pill-radius);
+    font-weight: 700; font-size: var(--type-md); cursor: pointer;
+    transition: background-color 120ms ease-out, box-shadow 120ms ease-out;
+  }
+  .btn.primary { background: var(--accent-bg-color); color: var(--accent-fg-color);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%); }
+  .btn.primary:hover { background: color-mix(in srgb, var(--accent-bg-color) 90%, #000); }
+  .btn.ghost { background: var(--card-bg-color); color: var(--window-fg-color);
+    box-shadow: inset 0 0 0 1px var(--border-color); }
+  .btn.ghost:hover { background: var(--hover-color); }
+  .hero .subnote { margin-top: 16px; font-size: var(--type-sm); opacity: 0.55; }
+
+  /* Latest-release pill (filled from the GitHub Releases API at runtime) */
+  .hero-ver {
+    display: none; align-items: center; gap: 8px;
+    margin: 16px auto 0; width: fit-content; height: 30px; padding: 0 14px;
+    border-radius: var(--pill-radius); font-size: var(--type-sm); font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    background: color-mix(in srgb, var(--accent-bg-color) 12%, transparent);
+    color: var(--accent-color); transition: background-color 120ms ease-out;
+  }
+  .hero-ver.loaded { display: inline-flex; }
+  .hero-ver:hover { background: color-mix(in srgb, var(--accent-bg-color) 20%, transparent); }
+  .hero-ver .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success-color); flex: none; }
+
+  .shot { margin: 48px auto 0; max-width: 1000px; }
+  .shot img { width: 100%; height: auto; display: block;
+    filter: drop-shadow(0 24px 60px rgb(0 0 0 / 18%)); }
+
+  /* ---------- Section scaffolding ---------- */
+  section { scroll-margin-top: 72px; }
+  .band { padding: 84px 0; }
+  .eyebrow { font-size: var(--type-sm); font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--accent-color); }
+  .band h2 { margin: 12px 0 0; font-size: clamp(28px, 3.6vw, 38px); letter-spacing: -0.02em;
+    font-weight: 800; line-height: 1.1; }
+  .band .sub { margin: 14px 0 0; max-width: 60ch; font-size: var(--type-md);
+    opacity: 0.7; line-height: 1.5; }
+  .sec-head { margin-bottom: 40px; }
+
+  /* ---------- Feature grid ---------- */
+  .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  @media (max-width: 720px) { .features { grid-template-columns: 1fr; } }
+  .feature {
+    background: var(--card-bg-color); border-radius: var(--card-radius);
+    box-shadow: 0 0 0 1px var(--card-shade-color), 0 1px 2px rgb(0 0 0 / 5%);
+    padding: 26px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .feature .ftile {
+    width: 46px; height: 46px; border-radius: 11px; flex: none;
+    display: grid; place-items: center;
+    background: color-mix(in srgb, var(--accent-bg-color) 12%, var(--card-bg-color));
+    color: var(--accent-color);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-bg-color) 22%, transparent);
+  }
+  .feature h3 { margin: 4px 0 0; font-size: var(--type-lg); font-weight: 700; letter-spacing: -0.01em; }
+  .feature p { margin: 0; font-size: var(--type-base); line-height: 1.5; opacity: 0.74; }
+  .feature ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .feature li { display: flex; gap: 9px; align-items: flex-start; font-size: var(--type-sm); opacity: 0.82; line-height: 1.4; }
+  .feature li .ad-icon { color: var(--accent-color); margin-top: 1px; }
+
+  /* ---------- Closer look ---------- */
+  .look { background: var(--view-bg-color); border-top: 1px solid var(--card-shade-color);
+    border-bottom: 1px solid var(--card-shade-color); }
+  .look-row { display: grid; grid-template-columns: 1fr 1.25fr; gap: 44px; align-items: center; }
+  .look-row + .look-row { margin-top: 64px; }
+  .look-row.flip { grid-template-columns: 1.25fr 1fr; }
+  .look-row.flip .look-text { order: 2; }
+  @media (max-width: 800px) {
+    .look-row, .look-row.flip { grid-template-columns: 1fr; gap: 22px; }
+    .look-row.flip .look-text { order: 0; }
+  }
+  .look-text h3 { margin: 10px 0 0; font-size: var(--type-xl); font-weight: 700; letter-spacing: -0.01em; }
+  .look-text p { margin: 12px 0 0; font-size: var(--type-base); line-height: 1.55; opacity: 0.74; }
+  .look-text .tag { font-size: var(--type-sm); font-weight: 700; color: var(--accent-color);
+    letter-spacing: 0.04em; text-transform: uppercase; }
+  .panel {
+    border-radius: 12px; overflow: hidden; background: var(--card-bg-color);
+    box-shadow: 0 0 0 1px var(--card-shade-color), 0 18px 40px -16px rgb(0 0 0 / 22%);
+  }
+  .panel img { width: 100%; height: auto; display: block; }
+
+  /* Bare screenshot (window shadow is baked into the transparent PNG) */
+  .shot-bare img { width: 100%; height: auto; display: block;
+    filter: drop-shadow(0 18px 40px rgb(0 0 0 / 16%)); }
+
+  /* Profiler showcase + segmented control */
+  .showcase { margin-bottom: 64px; }
+  .showcase-head { display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 20px; flex-wrap: wrap; }
+  .showcase-head h3 { margin: 8px 0 0; font-size: var(--type-xl); font-weight: 700; letter-spacing: -0.01em; }
+  .showcase-head .tag { font-size: var(--type-sm); font-weight: 700; color: var(--accent-color);
+    letter-spacing: 0.04em; text-transform: uppercase; }
+  .seg { display: inline-flex; background: var(--card-bg-color); border-radius: var(--button-radius);
+    box-shadow: inset 0 0 0 1px var(--border-color); padding: 3px; gap: 3px; }
+  .seg-btn { border: 0; background: transparent; padding: 7px 18px; border-radius: 5px;
+    font: inherit; font-weight: 700; font-size: var(--type-sm); color: var(--window-fg-color);
+    cursor: pointer; transition: background-color 120ms ease-out, color 120ms ease-out; }
+  .seg-btn:hover { background: var(--hover-color); }
+  .seg-btn.active { background: var(--accent-bg-color); color: var(--accent-fg-color); }
+  .seg-btn:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+  .showcase-desc { margin: 16px 0 0; max-width: 64ch; font-size: var(--type-base);
+    line-height: 1.55; opacity: 0.74; min-height: 2.6em; }
+  .showcase-stage { position: relative; margin-top: 22px; aspect-ratio: 1325 / 786; }
+  .showcase-stage img { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; opacity: 0; transition: opacity 200ms ease-out; }
+  .showcase-stage img.active { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .showcase-stage img { transition: none; } }
+
+  /* ---------- Install ---------- */
+  .install-intro { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: end; }
+  @media (max-width: 800px) { .install-intro { grid-template-columns: 1fr; gap: 18px; } }
+  .reqs { display: flex; flex-direction: column; gap: 10px; }
+  .req { display: flex; gap: 10px; align-items: flex-start; font-size: var(--type-base); opacity: 0.82; }
+  .req .ad-icon { color: var(--accent-color); margin-top: 2px; }
+  .req code { background: var(--shade-color); padding: 1px 6px; border-radius: 5px; font-size: 0.88em; }
+
+  .channels { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 40px; }
+  @media (max-width: 800px) { .channels { grid-template-columns: 1fr; } }
+  .channel {
+    background: var(--card-bg-color); border-radius: var(--card-radius);
+    box-shadow: 0 0 0 1px var(--card-shade-color), 0 1px 2px rgb(0 0 0 / 5%);
+    padding: 24px; display: flex; flex-direction: column;
+  }
+  .channel.is-stable { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--success-color) 45%, transparent), 0 1px 2px rgb(0 0 0 / 5%); }
+  .channel.is-testing { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--warning-color) 50%, transparent), 0 1px 2px rgb(0 0 0 / 5%); }
+  .channel .ch-top { margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .channel .seg { width: fit-content; }
+  .ch-meta { display: none; align-items: center; gap: 10px; }
+  .ch-meta.active { display: flex; }
+  .ch-meta .rec { font-size: var(--type-sm); font-weight: 700; opacity: 0.5; }
+  .ch-panel { display: none; }
+  .ch-panel.active { display: block; }
+  .ver-badge.green { background: color-mix(in srgb, var(--success-color) 16%, transparent); color: var(--success-color); }
+  .ver-badge.green:hover { background: color-mix(in srgb, var(--success-color) 26%, transparent); }
+  .ch-head { display: flex; align-items: center; gap: 10px; }
+  .chip { display: inline-flex; align-items: center; height: 22px; padding: 0 10px;
+    border-radius: var(--pill-radius); font-size: var(--type-xs); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; }
+  .chip.green { background: color-mix(in srgb, var(--success-color) 16%, transparent); color: var(--success-color); }
+  .chip.amber { background: color-mix(in srgb, var(--warning-color) 18%, transparent); color: var(--warning-color); }
+  .ch-head .rec { margin-left: auto; font-size: var(--type-sm); font-weight: 700; opacity: 0.5; }
+  .ver-badge {
+    display: none; align-items: center; gap: 6px; height: 22px; padding: 0 10px;
+    border-radius: var(--pill-radius); font-size: var(--type-xs); font-weight: 700;
+    letter-spacing: 0.02em; font-variant-numeric: tabular-nums;
+    background: color-mix(in srgb, var(--accent-bg-color) 14%, transparent);
+    color: var(--accent-color); transition: background-color 120ms ease-out;
+  }
+  .ver-badge.loaded { display: inline-flex; }
+  .ver-badge:hover { background: color-mix(in srgb, var(--accent-bg-color) 22%, transparent); }
+  .ver-badge.amber {
+    background: color-mix(in srgb, var(--warning-color) 18%, transparent);
+    color: var(--warning-color);
+  }
+  .ver-badge.amber:hover { background: color-mix(in srgb, var(--warning-color) 28%, transparent); }
+  .channel > .desc { margin: 12px 0 2px; font-size: var(--type-base); opacity: 0.74; line-height: 1.45; }
+  .step { margin-top: 18px; }
+  .step .label { display: flex; align-items: center; gap: 8px; font-size: var(--type-sm);
+    font-weight: 700; opacity: 0.66; margin-bottom: 7px; }
+  .step .label .n { display: grid; place-items: center; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--shade-color); font-size: 11px; }
+
+  .code {
+    position: relative; background: #2a2a2e; color: #f4f4f5;
+    border-radius: 8px; padding: 12px 44px 12px 14px;
+    font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6;
+    white-space: pre-wrap; overflow-wrap: anywhere; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 6%);
+  }
+  .code .tok-cmd { color: #99c1f1; }
+  .code .tok-flag { color: #c0bfbc; }
+  .code .tok-url { color: #8ff0a4; }
+  .code .tok-app { color: #f9f06b; }
+  .copy {
+    position: absolute; top: 7px; right: 7px;
+    width: 28px; height: 28px; border: 0; border-radius: 6px; cursor: pointer;
+    background: rgb(255 255 255 / 8%); color: #f4f4f5;
+    display: grid; place-items: center; transition: background-color 120ms ease-out;
+  }
+  .copy:hover { background: rgb(255 255 255 / 16%); }
+  .copy.done { background: var(--success-color); color: #fff; }
+  .copy .ad-icon { width: 15px; height: 15px; }
+  .copy .ic-done { display: none; }
+  .copy.done .ic-copy { display: none; }
+  .copy.done .ic-done { display: block; }
+
+  .oneclick { margin-top: 16px; font-size: var(--type-sm); opacity: 0.8; display: flex;
+    align-items: center; gap: 7px; flex-wrap: wrap; }
+  .oneclick a { color: var(--accent-color); font-weight: 700; }
+  .oneclick a:hover { text-decoration: underline; }
+
+  .update-note {
+    margin-top: 28px; display: flex; flex-direction: column; gap: 14px;
+    background: var(--card-bg-color); border-radius: var(--card-radius);
+    box-shadow: 0 0 0 1px var(--card-shade-color); padding: 16px 20px;
+  }
+  .update-note .un-head { display: flex; gap: 10px; align-items: flex-start; }
+  .update-note .un-head .ad-icon { color: var(--accent-color); margin-top: 2px; flex: none; }
+  .update-note .txt { font-size: var(--type-base); opacity: 0.8; }
+  .update-note .un-cmds { display: flex; gap: 10px; flex-wrap: wrap; }
+  .update-note .un-cmds .code { flex: 1 1 220px; min-width: 180px; }
+
+  /* Manual / offline bundle install */
+  .manual-note {
+    margin-top: 28px; background: var(--card-bg-color); border-radius: var(--card-radius);
+    box-shadow: 0 0 0 1px var(--card-shade-color); padding: 22px;
+  }
+  .manual-note .mn-head { display: flex; align-items: flex-start; gap: 14px; }
+  .manual-note .mn-head > div { flex: 1; min-width: 0; }
+  .manual-note h3 { margin: 0; font-size: var(--type-lg); font-weight: 700; letter-spacing: -0.01em; }
+  .manual-note p { margin: 6px 0 0; font-size: var(--type-base); line-height: 1.5; opacity: 0.74; }
+  .manual-note p code { background: var(--shade-color); padding: 1px 6px; border-radius: 5px; font-size: 0.88em; }
+  .manual-note .code { margin-top: 16px; }
+  .btn.ghost.sm {
+    flex: none; height: 34px; padding: 0 14px; font-size: var(--type-sm);
+    border-radius: var(--button-radius); align-self: center;
+  }
+  @media (max-width: 620px) {
+    .manual-note .mn-head { flex-wrap: wrap; }
+    .btn.ghost.sm { align-self: flex-start; }
+  }
+
+  /* ---------- Donate ---------- */
+  .donate { text-align: center; }
+  .donate .heart {
+    width: 62px; height: 62px; border-radius: 16px; margin: 0 auto 22px;
+    display: grid; place-items: center;
+    background: color-mix(in srgb, var(--accent-pink) 14%, var(--card-bg-color));
+    color: var(--accent-pink);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-pink) 26%, transparent);
+  }
+  .donate h2 { margin: 0; }
+  .donate p { margin: 16px auto 0; max-width: 54ch; font-size: var(--type-md);
+    opacity: 0.72; line-height: 1.55; }
+  .btn.kofi { margin-top: 28px; background: var(--accent-pink); color: #fff;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 25%); }
+  .btn.kofi:hover { background: color-mix(in srgb, var(--accent-pink) 90%, #000); }
+
+  /* ---------- Footer ---------- */
+  footer { border-top: 1px solid var(--card-shade-color); padding: 40px 0; }
+  footer .frow { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  footer .brand .name { font-size: var(--type-base); }
+  footer .flinks { margin-left: auto; display: flex; gap: 20px; flex-wrap: wrap; }
+  footer .flinks a { font-size: var(--type-base); opacity: 0.75; font-weight: 500; }
+  footer .flinks a:hover { opacity: 1; color: var(--accent-color); }
+  footer .fine { margin-top: 18px; font-size: var(--type-sm); opacity: 0.5; line-height: 1.5; max-width: 70ch; }
+
+  /* ---------- Subtle entrance (scroll-driven, degrades to visible) ---------- */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .reveal { animation: rise linear both; animation-timeline: view(); animation-range: entry 4% cover 18%; }
+    }
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="wrap bar">
+    <a class="brand" href="#top">
+      <img class="brand-icon" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/app/data/icons/hicolor/scalable/apps/io.github.todevelopers.GseProfiler.svg" alt="" width="30" height="30">
+      <span class="name">GSE Profiler</span>
+    </a>
+    <nav class="links">
+      <a class="navlink hide-sm" href="#features">Features</a>
+      <a class="navlink hide-sm" href="#closer">A closer look</a>
+      <a class="navlink" href="#install">Install</a>
+      <a class="navlink hide-sm" href="https://github.com/todevelopers/gseprofiler" target="_blank" rel="noopener">Source</a>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap">
+    <img class="hero-icon" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/app/data/icons/hicolor/scalable/apps/io.github.todevelopers.GseProfiler.svg" alt="GSE Profiler app icon" width="88" height="88">
+    <a class="hero-ver" href="https://github.com/todevelopers/gseprofiler/releases/latest" target="_blank" rel="noopener" data-latest-version data-version-prefix="Latest stable" data-fallback="View the latest release">
+      <span class="dot"></span>
+      <span data-version-text>Latest stable</span>
+    </a>
+    <h1>Profile GNOME Shell extensions<br>as they run.</h1>
+    <p class="lede">A developer toolkit for extension authors and testers. GSE Profiler attaches to the running shell and gives you live function timing, structured log filtering, and object inspection, all from a native GTK4 interface built for modern GNOME, with zero changes to your extension's code.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="#install">
+        <span class="ad-icon" style="--icon-url:url(assets/icons/folder-download-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 7.984375 0 c -0.550781 0 -1 0.449219 -1 1 v 8.585938 l -2.292969 -2.292969 c -0.1875 -0.1875 -0.441406 -0.292969 -0.707031 -0.292969 s -0.519531 0.105469 -0.707031 0.292969 c -0.390625 0.390625 -0.390625 1.023437 0 1.414062 l 4 4 c 0.390625 0.390625 1.023437 0.390625 1.414062 0 l 4 -4 c 0.390625 -0.390625 0.390625 -1.023437 0 -1.414062 s -1.023437 -0.390625 -1.414062 0 l -2.292969 2.292969 v -8.585938 c 0 -0.550781 -0.449219 -1 -1 -1 z m -6 14 v 2 h 12 v -2 z m 0 0" fill="currentColor"></path>
+</svg></span>
+        Install GSE Profiler
+      </a>
+      <a class="btn ghost" href="https://github.com/todevelopers/gseprofiler" target="_blank" rel="noopener">
+        View source
+        <span class="ad-icon" style="--icon-url:url(assets/icons/go-next-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 4 2 c 0 -0.265625 0.105469 -0.519531 0.292969 -0.707031 c 0.390625 -0.390625 1.023437 -0.390625 1.414062 0 l 6 6 c 0.1875 0.1875 0.292969 0.441406 0.292969 0.707031 s -0.105469 0.519531 -0.292969 0.707031 l -6 6 c -0.390625 0.390625 -1.023437 0.390625 -1.414062 0 c -0.1875 -0.1875 -0.292969 -0.441406 -0.292969 -0.707031 s 0.105469 -0.519531 0.292969 -0.707031 l 5.292969 -5.292969 l -5.292969 -5.292969 c -0.1875 -0.1875 -0.292969 -0.441406 -0.292969 -0.707031 z m 0 0" fill="currentColor"></path>
+</svg></span>
+      </a>
+    </div>
+    <p class="subnote">Free and open source · Flatpak · Stable and testing channels</p>
+    <div class="shot reveal">
+      <img src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/data/screenshots/flamegraph.png" alt="GSE Profiler showing a live recording in the Profiler view: a sidebar of installed extensions, recording stats, a flamegraph timeline, and a per-function timing breakdown." width="1325" height="782">
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section id="features" class="band">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">What's inside</div>
+      <h2>Four tools, one window</h2>
+      <p class="sub">Everything you need to understand a misbehaving extension, without leaving GSE Profiler. Manage it, watch its logs, time its code, and inspect its live objects.</p>
+    </div>
+    <div class="features">
+      <article class="feature reveal">
+        <span class="ftile"><span class="ad-icon lg" style="--icon-url:url(assets/icons/application-x-addon-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 7.03125 0.015625 c -1.109375 0 -2 0.890625 -2 2 v 1 h -3.015625 c -1.109375 0 -2 0.890625 -2 2 v 2 h 1.015625 c 1.105469 0 2 0.890625 2 2 s -0.894531 2 -2 2 h -1.015625 v 2.988281 c 0 1.105469 0.890625 2 2 2 h 3.015625 v -0.988281 c 0 -1.109375 0.890625 -2 2 -2 c 1.105469 0 2 0.890625 2 2 v 0.988281 h 2 c 1.105469 0 2 -0.894531 2 -2 v -2.988281 h 1 c 1.105469 0 2 -0.890625 2 -2 s -0.894531 -2 -2 -2 h -1 v -2 c 0 -1.109375 -0.894531 -2 -2 -2 h -2 v -1 c 0 -1.109375 -0.894531 -2 -2 -2 z m 0 0" fill="currentColor"></path>
+</svg></span></span>
+        <h3>Extension Manager</h3>
+        <p>Every installed extension, grouped by user, system, and disabled, each with its live status.</p>
+        <ul>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Enable or disable with a single click</li>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Open an extension's source folder directly</li>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Install a new extension straight from GitHub</li>
+        </ul>
+      </article>
+      <article class="feature reveal">
+        <span class="ftile"><span class="ad-icon lg" style="--icon-url:url(assets/icons/folder-documents-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 4.96875 1.003906 c -1.644531 0 -3 1.355469 -3 3 v 9 c 0 1.644532 1.355469 3 3 3 h 6 c 1.644531 0 3 -1.355468 3 -3 v -7.5 c 0 -0.265625 -0.105469 -0.519531 -0.292969 -0.707031 l -3.5 -3.5 c -0.1875 -0.1875 -0.441406 -0.292969 -0.707031 -0.292969 z m 0 2 h 4 v 1.5 c 0 1 0.5 1.5 1.5 1.5 h 1.5 v 7 c 0 0.570313 -0.429688 1 -1 1 h -6 c -0.570312 0 -1 -0.429687 -1 -1 v -9 c 0 -0.570312 0.429688 -1 1 -1 z m 0 0" fill="currentColor"></path>
+</svg></span></span>
+        <h3>Log Viewer</h3>
+        <p>A live systemd-journal stream that captures the gnome-shell process by default, where all extensions actually run.</p>
+        <ul>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Filter by level, extension tag, and full-text search in real time</li>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Structured capture: scope, boot, source preset, priority</li>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Power-user raw journalctl override when you need it</li>
+        </ul>
+      </article>
+      <article class="feature reveal">
+        <span class="ftile"><span class="ad-icon lg" style="--icon-url:url(assets/icons/power-profile-performance-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <g fill="currentColor">
+        <path d="m 16 9.972656 c 0 -2.855468 -1.515625 -5.539062 -4 -6.972656 c -2.472656 -1.429688 -5.527344 -1.429688 -8 0 c -2.484375 1.433594 -4 4.117188 -4 6.972656 c 0 0.550782 0.449219 1 1 1 h 1 c 0.550781 0 1 -0.449218 1 -1 c -0.03125 -0.433594 -0.335938 -0.796875 -0.761719 -0.898437 c 0.285157 -1.78125 1.1875 -3.433594 2.761719 -4.339844 c 1.859375 -1.074219 4.140625 -1.074219 6 0 c 1.574219 0.90625 2.476562 2.558594 2.761719 4.339844 c -0.425781 0.101562 -0.730469 0.464843 -0.761719 0.898437 c 0 0.550782 0.449219 1 1 1 h 1 c 0.550781 0 1 -0.449218 1 -1 z m 0 0"></path>
+        <path d="m 11 5.667969 l -4.480469 4.972656 c -0.007812 0.007813 -0.015625 0.015625 -0.023437 0.027344 c -0.125 0.136719 -0.226563 0.292969 -0.308594 0.460937 c -0.472656 1 -0.046875 2.191406 0.949219 2.667969 c 0.996093 0.472656 2.191406 0.046875 2.664062 -0.949219 c 0.070313 -0.148437 0.121094 -0.304687 0.152344 -0.464844 h 0.003906 l 0.007813 -0.054687 l 0.007812 -0.042969 c 0.003906 -0.011718 0.003906 -0.023437 0.003906 -0.035156 z m 0 0"></path>
+    </g>
+</svg></span></span>
+        <h3>Profiler</h3>
+        <p>Monkey-patch any extension at runtime to measure where its time goes. No code changes needed.</p>
+        <ul>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Visualise timing as a flamegraph, swimlane, or histogram</li>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Per-function breakdown: calls, total, self, average, max</li>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Export and reload whole sessions as JSON</li>
+        </ul>
+      </article>
+      <article class="feature reveal">
+        <span class="ftile"><span class="ad-icon lg" style="--icon-url:url(assets/icons/edit-find-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 6.5 0 c -3.578125 0 -6.5 2.921875 -6.5 6.5 s 2.921875 6.5 6.5 6.5 c 1.429688 0 2.753906 -0.46875 3.828125 -1.257812 l 2.945313 2.945312 c 0.957031 0.9375 2.363281 -0.5 1.40625 -1.4375 l -2.929688 -2.929688 c 0.785156 -1.074218 1.25 -2.394531 1.25 -3.820312 c 0 -3.578125 -2.921875 -6.5 -6.5 -6.5 z m 0 2 c 2.496094 0 4.5 2.003906 4.5 4.5 s -2.003906 4.5 -4.5 4.5 s -4.5 -2.003906 -4.5 -4.5 s 2.003906 -4.5 4.5 -4.5 z m 0 0" fill="currentColor"></path>
+</svg></span></span>
+        <h3>Inspector</h3>
+        <p>Open a live extension object and walk through it while the shell is running.</p>
+        <ul>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Browse properties and methods on the running object</li>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Read current values as they change</li>
+          <li><span class="ad-icon" style="--icon-url:url(assets/icons/object-select-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span> Call methods interactively to test behaviour</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLOSER LOOK ============ -->
+<section id="closer" class="band look">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">A closer look</div>
+      <h2>See it working</h2>
+      <p class="sub">Real captures from a profiling session against a live RSS feed extension.</p>
+    </div>
+
+    <div class="showcase reveal">
+      <div class="showcase-head">
+        <div>
+          <span class="tag">Profiler</span>
+          <h3>Read a recording three ways</h3>
+        </div>
+        <div class="seg" role="tablist" aria-label="Profiler visualisation">
+          <button class="seg-btn active" data-shot="flamegraph" role="tab" aria-selected="true">Flamegraph</button>
+          <button class="seg-btn" data-shot="swimlane" role="tab" aria-selected="false">Swimlane</button>
+          <button class="seg-btn" data-shot="histogram" role="tab" aria-selected="false">Histogram</button>
+        </div>
+      </div>
+      <p class="showcase-desc" id="showcase-desc">Nested calls laid out along a real time axis. A function that fires repeatedly, and the rebuild it triggers underneath, is obvious at a glance.</p>
+      <div class="showcase-stage">
+        <img class="active" data-shot="flamegraph" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/data/screenshots/flamegraph.png" alt="The Profiler flamegraph view: a recording with 27 calls across 9 functions, a stacked timeline, and a per-function breakdown table." width="1325" height="782">
+        <img data-shot="swimlane" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/data/screenshots/swimlane.png" alt="The Profiler swimlane view: each function on its own lane across the recording's time span, with gaps elided." width="1325" height="782">
+        <img data-shot="histogram" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/data/screenshots/histogram.png" alt="The Profiler histogram view: total time per function shown as horizontal bars." width="1325" height="792">
+      </div>
+    </div>
+
+    <div class="look-row flip reveal">
+      <div class="look-text">
+        <span class="tag">Logs</span>
+        <h3>Watch the journal in real time</h3>
+        <p>A live systemd-journal stream scoped to the gnome-shell process. Filter by level, tag, and full-text search, with warnings and errors highlighted as they arrive.</p>
+      </div>
+      <div class="shot-bare"><img src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/data/screenshots/logs.png" alt="The Logs view streaming the systemd journal, with 199 lines shown and counts for errors, warnings, info, and debug." width="1325" height="792"></div>
+    </div>
+
+    <div class="look-row reveal">
+      <div class="look-text">
+        <span class="tag">Inspector</span>
+        <h3>Walk a live object</h3>
+        <p>Drill into a running extension object and read its properties and methods with live values. Expand nested objects and arrays, and call methods to test behaviour.</p>
+      </div>
+      <div class="shot-bare"><img src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/data/screenshots/inspector.png" alt="The Inspector view showing 78 properties of a live extension state object, with types and current values." width="1325" height="792"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INSTALL ============ -->
+<section id="install" class="band">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Install</div>
+      <div class="install-intro">
+        <div>
+          <h2>Add a remote, then install</h2>
+          <p class="sub">GSE Profiler ships as a Flatpak from a self-hosted remote. Pick the stable channel for everyday use, or testing for early prerelease builds.</p>
+        </div>
+        <div class="reqs">
+          <div class="req"><span class="ad-icon" style="--icon-url:url(assets/icons/dialog-information-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <g fill="currentColor">
+        <path d="m 7.996094 0 c -2.835938 0 -5.292969 2 -5.871094 4.777344 c -0.527344 2.535156 0.6875 5.035156 2.875 6.328125 v 0.894531 c 0 0.554688 0.449219 1 1 1 h 4 c 0.550781 0 1 -0.445312 1 -1 l 0.003906 -0.898438 c 2.179688 -1.292968 3.398438 -3.796874 2.867188 -6.332031 c -0.582032 -2.773437 -3.039063 -4.769531 -5.875 -4.769531 z m 0 2 c 1.898437 0 3.527344 1.320312 3.917968 3.179688 c 0.390626 1.863281 -0.570312 3.726562 -2.3125 4.488281 c -0.363281 0.15625 -0.597656 0.515625 -0.601562 0.914062 v 0.417969 h -2 v -0.417969 c -0.003906 -0.398437 -0.238281 -0.753906 -0.601562 -0.914062 c -1.742188 -0.761719 -2.703126 -2.625 -2.316407 -4.484375 s 2.015625 -3.183594 3.914063 -3.183594 z m -1.996094 12 v 1 c 0 0.554688 0.445312 1 1 1 h 2 c 0.554688 0 1 -0.445312 1 -1 v -1 z m 0 0"></path>
+        <path d="m 6.644531 6.144531 c -0.195312 0.195313 -0.195312 0.515625 0 0.707031 l 1 1 c 0.195313 0.195313 0.511719 0.195313 0.707031 0 l 1 -1 c 0.195313 -0.191406 0.195313 -0.511718 0 -0.707031 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 l -0.648437 0.648438 l -0.644532 -0.648438 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 z m 0 0" fill-opacity="0.6"></path>
+    </g>
+</svg></span><span>Requires <code>flatpak</code> on a GNOME 47+ system.</span></div>
+          <div class="req"><span class="ad-icon" style="--icon-url:url(assets/icons/dialog-information-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <g fill="currentColor">
+        <path d="m 7.996094 0 c -2.835938 0 -5.292969 2 -5.871094 4.777344 c -0.527344 2.535156 0.6875 5.035156 2.875 6.328125 v 0.894531 c 0 0.554688 0.449219 1 1 1 h 4 c 0.550781 0 1 -0.445312 1 -1 l 0.003906 -0.898438 c 2.179688 -1.292968 3.398438 -3.796874 2.867188 -6.332031 c -0.582032 -2.773437 -3.039063 -4.769531 -5.875 -4.769531 z m 0 2 c 1.898437 0 3.527344 1.320312 3.917968 3.179688 c 0.390626 1.863281 -0.570312 3.726562 -2.3125 4.488281 c -0.363281 0.15625 -0.597656 0.515625 -0.601562 0.914062 v 0.417969 h -2 v -0.417969 c -0.003906 -0.398437 -0.238281 -0.753906 -0.601562 -0.914062 c -1.742188 -0.761719 -2.703126 -2.625 -2.316407 -4.484375 s 2.015625 -3.183594 3.914063 -3.183594 z m -1.996094 12 v 1 c 0 0.554688 0.445312 1 1 1 h 2 c 0.554688 0 1 -0.445312 1 -1 v -1 z m 0 0"></path>
+        <path d="m 6.644531 6.144531 c -0.195312 0.195313 -0.195312 0.515625 0 0.707031 l 1 1 c 0.195313 0.195313 0.511719 0.195313 0.707031 0 l 1 -1 c 0.195313 -0.191406 0.195313 -0.511718 0 -0.707031 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 l -0.648437 0.648438 l -0.644532 -0.648438 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 z m 0 0" fill-opacity="0.6"></path>
+    </g>
+</svg></span><span>Depends on the GNOME runtime from Flathub, pulled in automatically on first install (Flathub is preconfigured on most GNOME systems).</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="channel reveal is-stable" id="channel-card">
+      <div class="ch-top">
+        <div class="seg" role="tablist" aria-label="Release channel">
+          <button class="seg-btn active" data-channel="stable" role="tab" aria-selected="true">Stable</button>
+          <button class="seg-btn" data-channel="testing" role="tab" aria-selected="false">Testing</button>
+        </div>
+        <div class="ch-meta active" data-channel="stable">
+          <a class="ver-badge green" href="https://github.com/todevelopers/gseprofiler/releases/latest" target="_blank" rel="noopener" data-latest-version data-fallback="Latest release"><span data-version-text>Latest</span></a>
+          <span class="rec">Recommended</span>
+        </div>
+        <div class="ch-meta" data-channel="testing">
+          <a class="ver-badge amber" href="https://github.com/todevelopers/gseprofiler/tags" target="_blank" rel="noopener" data-latest-prerelease data-fallback="Latest prerelease"><span data-version-text>Latest</span></a>
+          <span class="rec">Prerelease</span>
+        </div>
+      </div>
+
+      <!-- STABLE -->
+      <div class="ch-panel active" data-channel="stable">
+        <p class="desc">Production-ready releases for everyday use.</p>
+
+        <div class="step">
+          <div class="label"><span class="n">1</span> Add the remote</div>
+          <div class="code" data-copy="flatpak remote-add --user --if-not-exists todevelopers https://todevelopers.github.io/flatpaks/todevelopers.flatpakrepo"><span class="tok-cmd">flatpak</span> remote-add <span class="tok-flag">--user --if-not-exists</span> todevelopers <span class="tok-url">https://todevelopers.github.io/flatpaks/todevelopers.flatpakrepo</span><button class="copy" aria-label="Copy command"><span class="ad-icon ic-copy"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 0 3 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 c 0 0.550781 -0.449219 1 -1 1 s -1 -0.449219 -1 -1 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 v 5 c 0 0.570312 0.429688 1 1 1 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 c -1.644531 0 -3 -1.355469 -3 -3 z m 5 5 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 v 5 c 0 1.644531 -1.355469 3 -3 3 h -5 c -1.644531 0 -3 -1.355469 -3 -3 z m 2 0 v 5 c 0 0.570312 0.429688 1 1 1 h 5 c 0.570312 0 1 -0.429688 1 -1 v -5 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 z m 0 0" fill="currentColor"></path>
+</svg></span><span class="ad-icon ic-done"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span></button></div>
+        </div>
+
+        <div class="step">
+          <div class="label"><span class="n">2</span> Install the app</div>
+          <div class="code" data-copy="flatpak install todevelopers io.github.todevelopers.GseProfiler"><span class="tok-cmd">flatpak</span> install todevelopers <span class="tok-app">io.github.todevelopers.GseProfiler</span><button class="copy" aria-label="Copy command"><span class="ad-icon ic-copy"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 0 3 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 c 0 0.550781 -0.449219 1 -1 1 s -1 -0.449219 -1 -1 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 v 5 c 0 0.570312 0.429688 1 1 1 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 c -1.644531 0 -3 -1.355469 -3 -3 z m 5 5 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 v 5 c 0 1.644531 -1.355469 3 -3 3 h -5 c -1.644531 0 -3 -1.355469 -3 -3 z m 2 0 v 5 c 0 0.570312 0.429688 1 1 1 h 5 c 0.570312 0 1 -0.429688 1 -1 v -5 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 z m 0 0" fill="currentColor"></path>
+</svg></span><span class="ad-icon ic-done"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span></button></div>
+        </div>
+
+        <p class="oneclick">
+          <span class="ad-icon" style="--icon-url:url(assets/icons/system-software-install-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <g fill="currentColor">
+        <path d="m 7.996094 0 c -2.835938 0 -5.292969 2 -5.871094 4.777344 c -0.527344 2.535156 0.6875 5.035156 2.875 6.328125 v 0.894531 c 0 0.554688 0.449219 1 1 1 h 4 c 0.550781 0 1 -0.445312 1 -1 l 0.003906 -0.898438 c 2.179688 -1.292968 3.398438 -3.796874 2.867188 -6.332031 c -0.582032 -2.773437 -3.039063 -4.769531 -5.875 -4.769531 z m 0 2 c 1.898437 0 3.527344 1.320312 3.917968 3.179688 c 0.390626 1.863281 -0.570312 3.726562 -2.3125 4.488281 c -0.363281 0.15625 -0.597656 0.515625 -0.601562 0.914062 v 0.417969 h -2 v -0.417969 c -0.003906 -0.398437 -0.238281 -0.753906 -0.601562 -0.914062 c -1.742188 -0.761719 -2.703126 -2.625 -2.316407 -4.484375 s 2.015625 -3.183594 3.914063 -3.183594 z m -1.996094 12 v 1 c 0 0.554688 0.445312 1 1 1 h 2 c 0.554688 0 1 -0.445312 1 -1 v -1 z m 0 0"></path>
+        <path d="m 6.644531 6.144531 c -0.195312 0.195313 -0.195312 0.515625 0 0.707031 l 1 1 c 0.195313 0.195313 0.511719 0.195313 0.707031 0 l 1 -1 c 0.195313 -0.191406 0.195313 -0.511718 0 -0.707031 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 l -0.648437 0.648438 l -0.644532 -0.648438 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 z m 0 0" fill-opacity="0.6"></path>
+    </g>
+</svg></span>
+          Prefer one click? <a href="../io.github.todevelopers.GseProfiler.flatpakref">Open the stable .flatpakref</a>
+        </p>
+      </div>
+
+      <!-- TESTING -->
+      <div class="ch-panel" data-channel="testing">
+        <p class="desc">Beta and rc builds for early testing and feedback.</p>
+
+        <div class="step">
+          <div class="label"><span class="n">1</span> Add the remote</div>
+          <div class="code" data-copy="flatpak remote-add --user --if-not-exists todevelopers-testing https://todevelopers.github.io/flatpaks/todevelopers-testing.flatpakrepo"><span class="tok-cmd">flatpak</span> remote-add <span class="tok-flag">--user --if-not-exists</span> todevelopers-testing <span class="tok-url">https://todevelopers.github.io/flatpaks/todevelopers-testing.flatpakrepo</span><button class="copy" aria-label="Copy command"><span class="ad-icon ic-copy"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 0 3 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 c 0 0.550781 -0.449219 1 -1 1 s -1 -0.449219 -1 -1 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 v 5 c 0 0.570312 0.429688 1 1 1 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 c -1.644531 0 -3 -1.355469 -3 -3 z m 5 5 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 v 5 c 0 1.644531 -1.355469 3 -3 3 h -5 c -1.644531 0 -3 -1.355469 -3 -3 z m 2 0 v 5 c 0 0.570312 0.429688 1 1 1 h 5 c 0.570312 0 1 -0.429688 1 -1 v -5 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 z m 0 0" fill="currentColor"></path>
+</svg></span><span class="ad-icon ic-done"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span></button></div>
+        </div>
+
+        <div class="step">
+          <div class="label"><span class="n">2</span> Install the app</div>
+          <div class="code" data-copy="flatpak install todevelopers-testing io.github.todevelopers.GseProfiler"><span class="tok-cmd">flatpak</span> install todevelopers-testing <span class="tok-app">io.github.todevelopers.GseProfiler</span><button class="copy" aria-label="Copy command"><span class="ad-icon ic-copy"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 0 3 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 c 0 0.550781 -0.449219 1 -1 1 s -1 -0.449219 -1 -1 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 v 5 c 0 0.570312 0.429688 1 1 1 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 c -1.644531 0 -3 -1.355469 -3 -3 z m 5 5 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 v 5 c 0 1.644531 -1.355469 3 -3 3 h -5 c -1.644531 0 -3 -1.355469 -3 -3 z m 2 0 v 5 c 0 0.570312 0.429688 1 1 1 h 5 c 0.570312 0 1 -0.429688 1 -1 v -5 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 z m 0 0" fill="currentColor"></path>
+</svg></span><span class="ad-icon ic-done"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span></button></div>
+        </div>
+
+        <p class="oneclick">
+          <span class="ad-icon" style="--icon-url:url(assets/icons/system-software-install-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <g fill="currentColor">
+        <path d="m 7.996094 0 c -2.835938 0 -5.292969 2 -5.871094 4.777344 c -0.527344 2.535156 0.6875 5.035156 2.875 6.328125 v 0.894531 c 0 0.554688 0.449219 1 1 1 h 4 c 0.550781 0 1 -0.445312 1 -1 l 0.003906 -0.898438 c 2.179688 -1.292968 3.398438 -3.796874 2.867188 -6.332031 c -0.582032 -2.773437 -3.039063 -4.769531 -5.875 -4.769531 z m 0 2 c 1.898437 0 3.527344 1.320312 3.917968 3.179688 c 0.390626 1.863281 -0.570312 3.726562 -2.3125 4.488281 c -0.363281 0.15625 -0.597656 0.515625 -0.601562 0.914062 v 0.417969 h -2 v -0.417969 c -0.003906 -0.398437 -0.238281 -0.753906 -0.601562 -0.914062 c -1.742188 -0.761719 -2.703126 -2.625 -2.316407 -4.484375 s 2.015625 -3.183594 3.914063 -3.183594 z m -1.996094 12 v 1 c 0 0.554688 0.445312 1 1 1 h 2 c 0.554688 0 1 -0.445312 1 -1 v -1 z m 0 0"></path>
+        <path d="m 6.644531 6.144531 c -0.195312 0.195313 -0.195312 0.515625 0 0.707031 l 1 1 c 0.195313 0.195313 0.511719 0.195313 0.707031 0 l 1 -1 c 0.195313 -0.191406 0.195313 -0.511718 0 -0.707031 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 l -0.648437 0.648438 l -0.644532 -0.648438 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 z m 0 0" fill-opacity="0.6"></path>
+    </g>
+</svg></span>
+          Prefer one click? <a href="../io.github.todevelopers.GseProfiler-testing.flatpakref">Open the testing .flatpakref</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="manual-note reveal">
+      <div class="mn-head">
+        <span class="ad-icon lg" style="color:var(--accent-color)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 7.984375 0 c -0.550781 0 -1 0.449219 -1 1 v 8.585938 l -2.292969 -2.292969 c -0.1875 -0.1875 -0.441406 -0.292969 -0.707031 -0.292969 s -0.519531 0.105469 -0.707031 0.292969 c -0.390625 0.390625 -0.390625 1.023437 0 1.414062 l 4 4 c 0.390625 0.390625 1.023437 0.390625 1.414062 0 l 4 -4 c 0.390625 -0.390625 0.390625 -1.023437 0 -1.414062 s -1.023437 -0.390625 -1.414062 0 l -2.292969 2.292969 v -8.585938 c 0 -0.550781 -0.449219 -1 -1 -1 z m -6 14 v 2 h 12 v -2 z m 0 0" fill="currentColor"></path>
+</svg></span>
+        <div>
+          <h3>Or install a bundle manually</h3>
+          <p>Offline, or prefer not to add a remote? Download the latest single-file <code>.flatpak</code> bundle from the GitHub releases page and install it directly.</p>
+        </div>
+        <a class="btn ghost sm" href="https://github.com/todevelopers/gseprofiler/releases/latest" target="_blank" rel="noopener">Releases page <span class="ad-icon" style="width:14px;height:14px"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 4 2 c 0 -0.265625 0.105469 -0.519531 0.292969 -0.707031 c 0.390625 -0.390625 1.023437 -0.390625 1.414062 0 l 6 6 c 0.1875 0.1875 0.292969 0.441406 0.292969 0.707031 s -0.105469 0.519531 -0.292969 0.707031 l -6 6 c -0.390625 0.390625 -1.023437 0.390625 -1.414062 0 c -0.1875 -0.1875 -0.292969 -0.441406 -0.292969 -0.707031 s 0.105469 -0.519531 0.292969 -0.707031 l 5.292969 -5.292969 l -5.292969 -5.292969 c -0.1875 -0.1875 -0.292969 -0.441406 -0.292969 -0.707031 z m 0 0" fill="currentColor"></path>
+</svg></span></a>
+      </div>
+      <div class="code" data-copy="flatpak install --user ./io.github.todevelopers.GseProfiler.flatpak"><span class="tok-cmd">flatpak</span> install <span class="tok-flag">--user</span> <span class="tok-app">./io.github.todevelopers.GseProfiler.flatpak</span><button class="copy" aria-label="Copy command"><span class="ad-icon ic-copy"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 0 3 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 c 0 0.550781 -0.449219 1 -1 1 s -1 -0.449219 -1 -1 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 v 5 c 0 0.570312 0.429688 1 1 1 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 c -1.644531 0 -3 -1.355469 -3 -3 z m 5 5 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 v 5 c 0 1.644531 -1.355469 3 -3 3 h -5 c -1.644531 0 -3 -1.355469 -3 -3 z m 2 0 v 5 c 0 0.570312 0.429688 1 1 1 h 5 c 0.570312 0 1 -0.429688 1 -1 v -5 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 z m 0 0" fill="currentColor"></path>
+</svg></span><span class="ad-icon ic-done"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span></button></div>
+    </div>
+
+    <div class="update-note reveal">
+      <div class="un-head">
+      <span class="ad-icon" style="--icon-url:url(assets/icons/view-refresh-symbolic.svg)"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 7.40625 1 c -0.613281 0.007812 -1.234375 0.089844 -1.847656 0.253906 c -3.273438 0.878906 -5.558594 3.855469 -5.558594 7.246094 s 2.285156 6.367188 5.558594 7.242188 c 3.273437 0.878906 6.742187 -0.558594 8.4375 -3.492188 c 0.277344 -0.480469 0.109375 -1.089844 -0.367188 -1.367188 c -0.476562 -0.273437 -1.089844 -0.109374 -1.367187 0.367188 c -1.246094 2.160156 -3.777344 3.207031 -6.1875 2.5625 c -2.40625 -0.644531 -4.074219 -2.820312 -4.074219 -5.3125 c 0 -2.496094 1.667969 -4.667969 4.074219 -5.3125 c 2.410156 -0.644531 4.941406 0.402344 6.1875 2.5625 c 0.058593 0.085938 0.125 0.164062 0.203125 0.226562 l -0.019532 0.015626 l -0.007812 0.007812 h -1.4375 c -0.550781 0 -1 0.449219 -1 1 c 0 0 0 1 1 1 h 5 v -5 s 0.003906 -1 -1 -1 c -0.550781 0 -1 0.449219 -1 1 v 1.6875 l -0.015625 0.011719 l -0.011719 0.011719 c -1.277344 -2.179688 -3.53125 -3.519532 -5.953125 -3.691407 c -0.203125 -0.015625 -0.40625 -0.019531 -0.613281 -0.019531 z m 0 0" fill="currentColor"></path>
+</svg></span>
+      <span class="txt"><strong>Keeping it updated.</strong> Both channels update through Flatpak like any other app:</span>
+      </div>
+      <div class="un-cmds">
+      <div class="code" data-copy="flatpak update"><span class="tok-cmd">flatpak</span> update<button class="copy" aria-label="Copy command"><span class="ad-icon ic-copy"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 0 3 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 c 0 0.550781 -0.449219 1 -1 1 s -1 -0.449219 -1 -1 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 v 5 c 0 0.570312 0.429688 1 1 1 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 c -1.644531 0 -3 -1.355469 -3 -3 z m 5 5 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 v 5 c 0 1.644531 -1.355469 3 -3 3 h -5 c -1.644531 0 -3 -1.355469 -3 -3 z m 2 0 v 5 c 0 0.570312 0.429688 1 1 1 h 5 c 0.570312 0 1 -0.429688 1 -1 v -5 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 z m 0 0" fill="currentColor"></path>
+</svg></span><span class="ad-icon ic-done"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span></button></div>
+      </div>
+    </div>
+
+    <div class="update-note reveal">
+      <div class="un-head">
+      <span class="ad-icon"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <g fill="currentColor">
+        <path d="m 7.996094 0 c -2.835938 0 -5.292969 2 -5.871094 4.777344 c -0.527344 2.535156 0.6875 5.035156 2.875 6.328125 v 0.894531 c 0 0.554688 0.449219 1 1 1 h 4 c 0.550781 0 1 -0.445312 1 -1 l 0.003906 -0.898438 c 2.179688 -1.292968 3.398438 -3.796874 2.867188 -6.332031 c -0.582032 -2.773437 -3.039063 -4.769531 -5.875 -4.769531 z m 0 2 c 1.898437 0 3.527344 1.320312 3.917968 3.179688 c 0.390626 1.863281 -0.570312 3.726562 -2.3125 4.488281 c -0.363281 0.15625 -0.597656 0.515625 -0.601562 0.914062 v 0.417969 h -2 v -0.417969 c -0.003906 -0.398437 -0.238281 -0.753906 -0.601562 -0.914062 c -1.742188 -0.761719 -2.703126 -2.625 -2.316407 -4.484375 s 2.015625 -3.183594 3.914063 -3.183594 z m -1.996094 12 v 1 c 0 0.554688 0.445312 1 1 1 h 2 c 0.554688 0 1 -0.445312 1 -1 v -1 z m 0 0"></path>
+        <path d="m 6.644531 6.144531 c -0.195312 0.195313 -0.195312 0.515625 0 0.707031 l 1 1 c 0.195313 0.195313 0.511719 0.195313 0.707031 0 l 1 -1 c 0.195313 -0.191406 0.195313 -0.511718 0 -0.707031 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 l -0.648437 0.648438 l -0.644532 -0.648438 c -0.195312 -0.191406 -0.511718 -0.191406 -0.707031 0 z m 0 0" fill-opacity="0.6"></path>
+    </g>
+</svg></span>
+      <span class="txt"><strong>Installing through GNOME Software?</strong> After adding the remote, refresh the catalog so GSE Profiler appears. If Software is already open, restart it.</span>
+      </div>
+      <div class="un-cmds">
+      <div class="code" data-copy="flatpak update --appstream"><span class="tok-cmd">flatpak</span> update <span class="tok-flag">--appstream</span><button class="copy" aria-label="Copy command"><span class="ad-icon ic-copy"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 0 3 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 c 0 0.550781 -0.449219 1 -1 1 s -1 -0.449219 -1 -1 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 v 5 c 0 0.570312 0.429688 1 1 1 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 c -1.644531 0 -3 -1.355469 -3 -3 z m 5 5 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 v 5 c 0 1.644531 -1.355469 3 -3 3 h -5 c -1.644531 0 -3 -1.355469 -3 -3 z m 2 0 v 5 c 0 0.570312 0.429688 1 1 1 h 5 c 0.570312 0 1 -0.429688 1 -1 v -5 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 z m 0 0" fill="currentColor"></path>
+</svg></span><span class="ad-icon ic-done"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span></button></div>
+      <div class="code" data-copy="killall gnome-software"><span class="tok-cmd">killall</span> <span class="tok-app">gnome-software</span><button class="copy" aria-label="Copy command"><span class="ad-icon ic-copy"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 0 3 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 c 0 0.550781 -0.449219 1 -1 1 s -1 -0.449219 -1 -1 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 v 5 c 0 0.570312 0.429688 1 1 1 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 c -1.644531 0 -3 -1.355469 -3 -3 z m 5 5 c 0 -1.644531 1.355469 -3 3 -3 h 5 c 1.644531 0 3 1.355469 3 3 v 5 c 0 1.644531 -1.355469 3 -3 3 h -5 c -1.644531 0 -3 -1.355469 -3 -3 z m 2 0 v 5 c 0 0.570312 0.429688 1 1 1 h 5 c 0.570312 0 1 -0.429688 1 -1 v -5 c 0 -0.570312 -0.429688 -1 -1 -1 h -5 c -0.570312 0 -1 0.429688 -1 1 z m 0 0" fill="currentColor"></path>
+</svg></span><span class="ad-icon ic-done"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 13.753906 4.660156 c 0.175782 -0.199218 0.261719 -0.460937 0.246094 -0.726562 c -0.019531 -0.265625 -0.140625 -0.511719 -0.339844 -0.6875 c -0.199218 -0.175782 -0.460937 -0.261719 -0.726562 -0.246094 c -0.265625 0.019531 -0.511719 0.140625 -0.6875 0.339844 l -6.296875 7.195312 l -2.242188 -2.242187 c -0.390625 -0.390625 -1.023437 -0.390625 -1.414062 0 c -0.1875 0.1875 -0.292969 0.441406 -0.292969 0.707031 s 0.105469 0.519531 0.292969 0.707031 l 3 3 c 0.195312 0.195313 0.464843 0.304688 0.738281 0.292969 c 0.277344 -0.007812 0.539062 -0.132812 0.722656 -0.339844 z m 0 0" fill="currentColor"></path>
+</svg></span></button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DONATE ============ -->
+<section id="donate" class="band donate">
+  <div class="wrap reveal">
+    <h2>Support the project</h2>
+    <p>While building my own GNOME Shell extensions I kept reaching for a modern tool to debug them, and there wasn't one. So I started writing GSE Profiler in the evenings, around work and family. It's free and open source. If it saved you an afternoon of <code style="background:var(--shade-color);padding:1px 6px;border-radius:5px">console.log</code> debugging, a small donation is much appreciated.</p>
+    <a class="btn kofi" href="https://ko-fi.com/tommygunx89" target="_blank" rel="noopener">
+      <span class="ad-icon" style="--icon-url:url(assets/icons/emote-love-symbolic.svg)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><path d="M15 5.766a3.763 3.763 0 00-3.77-3.757c-1.37 0-2.57.73-3.23 1.822a3.77 3.77 0 00-3.23-1.822A3.763 3.763 0 001 5.766a3.74 3.74 0 001.19 2.738h-.001L7.914 14l5.898-5.496h-.002A3.739 3.739 0 0015 5.766" fill="currentColor"></path></svg></span>
+      Support on Ko-fi
+    </a>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="frow">
+      <a class="brand" href="#top">
+        <img class="brand-icon" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/app/data/icons/hicolor/scalable/apps/io.github.todevelopers.GseProfiler.svg" alt="" width="30" height="30">
+        <span class="name">GSE Profiler</span>
+      </a>
+      <nav class="flinks">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/todevelopers/gseprofiler" target="_blank" rel="noopener">Source</a>
+        <a href="https://ko-fi.com/tommygunx89" target="_blank" rel="noopener">Donate</a>
+      </nav>
+    </div>
+    <p class="fine">Not affiliated with GNOME, the GNOME Foundation, or Flathub. Hosted on GitHub Pages. GNOME and GNOME Shell are trademarks of the GNOME Foundation.</p>
+  </div>
+</footer>
+
+<script>
+  document.documentElement.classList.add('js');
+
+  // Profiler visualisation switcher
+  (function () {
+    var descriptions = {
+      flamegraph: 'Nested calls laid out along a real time axis. A function that fires repeatedly, and the rebuild it triggers underneath, is obvious at a glance.',
+      swimlane: 'Each function gets its own lane across the recording. Idle gaps are elided so you can compare when things ran, not just how long.',
+      histogram: 'Total time per function as horizontal bars. The hottest path reads top to bottom, with calls and averages alongside.'
+    };
+    var showcase = document.querySelector('.showcase');
+    var stage = document.querySelector('.showcase-stage');
+    var desc = document.getElementById('showcase-desc');
+    if (!stage || !showcase) return;
+    var shotBtns = showcase.querySelectorAll('.seg-btn[data-shot]');
+    shotBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var shot = btn.getAttribute('data-shot');
+        shotBtns.forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        stage.querySelectorAll('img').forEach(function (img) {
+          img.classList.toggle('active', img.getAttribute('data-shot') === shot);
+        });
+        if (desc && descriptions[shot]) desc.textContent = descriptions[shot];
+      });
+    });
+  })();
+
+  // Copy-to-clipboard on code blocks
+  function flashCopied(btn) {
+    btn.classList.add('done');
+    setTimeout(function () { btn.classList.remove('done'); }, 1400);
+  }
+  // Fallback for when the async Clipboard API is unavailable or blocked
+  // (insecure context, sandboxed iframe without clipboard-write permission, etc.)
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  document.querySelectorAll('.code').forEach(function (block) {
+    var btn = block.querySelector('.copy');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var text = block.getAttribute('data-copy') || block.textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          flashCopied(btn);
+        }).catch(function () {
+          if (legacyCopy(text)) flashCopied(btn);
+        });
+      } else if (legacyCopy(text)) {
+        flashCopied(btn);
+      }
+    });
+  });
+
+  // Release-channel switcher (Stable / Testing) — segmented control, same as the
+  // showcase visualisation toggle. Swaps the visible panel and the card accent.
+  (function () {
+    var card = document.getElementById('channel-card');
+    if (!card) return;
+    var btns = card.querySelectorAll('.seg-btn[data-channel]');
+    var panels = card.querySelectorAll('.ch-panel[data-channel]');
+    btns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var ch = btn.getAttribute('data-channel');
+        btns.forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        panels.forEach(function (p) {
+          p.classList.toggle('active', p.getAttribute('data-channel') === ch);
+        });
+        card.querySelectorAll('.ch-meta[data-channel]').forEach(function (m) {
+          m.classList.toggle('active', m.getAttribute('data-channel') === ch);
+        });
+        card.classList.toggle('is-stable', ch === 'stable');
+        card.classList.toggle('is-testing', ch === 'testing');
+      });
+    });
+  })();
+
+  // Latest stable release, pulled from the GitHub Releases API.
+  // The /releases/latest endpoint already excludes drafts and prereleases,
+  // so this is always the newest *stable* tag. Degrades to a plain link.
+  (function () {
+    var REPO = 'todevelopers/gseprofiler';
+    var els = document.querySelectorAll('[data-latest-version]');
+    if (!els.length) return;
+
+    function fill(el, text, url) {
+      var target = el.querySelector('[data-version-text]') || el;
+      target.textContent = text;
+      if (url && el.hasAttribute('href')) el.setAttribute('href', url);
+      el.classList.add('loaded');
+    }
+
+    fetch('https://api.github.com/repos/' + REPO + '/releases/latest', {
+      headers: { 'Accept': 'application/vnd.github+json' }
+    })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (data) {
+        var tag = (data && data.tag_name) ? data.tag_name : '';
+        var url = (data && data.html_url) ? data.html_url
+          : 'https://github.com/' + REPO + '/releases/latest';
+        if (!tag) throw new Error('no tag');
+        els.forEach(function (el) {
+          var prefix = el.getAttribute('data-version-prefix');
+          fill(el, prefix ? prefix + ' ' + tag : tag, url);
+        });
+      })
+      .catch(function () {
+        // API unreachable or rate-limited: keep a useful link, not an empty pill.
+        els.forEach(function (el) {
+          fill(el, el.getAttribute('data-fallback') || 'Latest release', null);
+        });
+      });
+  })();
+
+  // Latest prerelease (testing) tag. Testing builds are git tags like v1.0.4-rc1,
+  // not GitHub Releases, so the Releases API won't surface them — list git tags
+  // instead, keep only those with a prerelease suffix, and pick the newest by semver.
+  (function () {
+    var REPO = 'todevelopers/gseprofiler';
+    var els = document.querySelectorAll('[data-latest-prerelease]');
+    if (!els.length) return;
+
+    function fill(el, text, url) {
+      var target = el.querySelector('[data-version-text]') || el;
+      target.textContent = text;
+      if (url && el.hasAttribute('href')) el.setAttribute('href', url);
+      el.classList.add('loaded');
+    }
+    function parseVer(name) {
+      var s = String(name).replace(/^v/i, '');
+      var parts = s.split('-');
+      var core = parts[0].split('.').map(function (n) { return parseInt(n, 10) || 0; });
+      return { core: core, pre: parts.slice(1).join('-') };
+    }
+    // Returns >0 when a is newer than b.
+    function cmp(a, b) {
+      for (var i = 0; i < 3; i++) {
+        var av = a.core[i] || 0, bv = b.core[i] || 0;
+        if (av !== bv) return av - bv;
+      }
+      if (a.pre === b.pre) return 0;
+      var ax = a.pre.match(/^([a-z]+)\.?(\d*)$/i) || [null, a.pre, ''];
+      var bx = b.pre.match(/^([a-z]+)\.?(\d*)$/i) || [null, b.pre, ''];
+      if (ax[1] !== bx[1]) return ax[1] < bx[1] ? -1 : 1;       // alpha < beta < rc
+      return (parseInt(ax[2] || '0', 10)) - (parseInt(bx[2] || '0', 10)); // rc2 > rc1
+    }
+
+    fetch('https://api.github.com/repos/' + REPO + '/tags?per_page=100', {
+      headers: { 'Accept': 'application/vnd.github+json' }
+    })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (tags) {
+        // A hyphen marks a prerelease tag (semver convention), e.g. v1.0.4-rc1.
+        var pres = (tags || []).filter(function (t) { return t.name.indexOf('-') !== -1; });
+        if (!pres.length) throw new Error('no prerelease tag');
+        pres.sort(function (a, b) { return cmp(parseVer(b.name), parseVer(a.name)); });
+        var top = pres[0].name;
+        els.forEach(function (el) {
+          fill(el, top, 'https://github.com/' + REPO + '/tree/' + encodeURIComponent(top));
+        });
+      })
+      .catch(function () {
+        els.forEach(function (el) {
+          fill(el, el.getAttribute('data-fallback') || 'Latest prerelease', null);
+        });
+      });
+  })();
+
+</script>
+</body>
+</html>
