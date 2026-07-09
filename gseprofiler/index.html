@@ -94,7 +94,30 @@
   }
   .nav .links a.navlink:hover { background: var(--hover-color); }
   .nav .links .sep { width: 1px; height: 22px; background: var(--border-color); margin: 0 8px; }
-  @media (max-width: 720px) { .nav .links .navlink.hide-sm { display: none; } }
+
+  /* Mobile nav: hamburger toggle + collapsible dropdown (hidden on desktop) */
+  .nav-toggle {
+    display: none; align-items: center; justify-content: center;
+    width: 36px; height: 36px; margin-left: auto; flex: none;
+    border-radius: var(--button-radius); color: var(--window-fg-color);
+    transition: background-color 120ms ease-out;
+  }
+  .nav-toggle:hover { background: var(--hover-color); }
+  .nav-toggle svg { width: 20px; height: 20px; }
+  @media (max-width: 720px) {
+    .nav-toggle { display: inline-flex; }
+    .nav .links {
+      position: absolute; top: 56px; left: 0; right: 0;
+      display: none; flex-direction: column; align-items: stretch; gap: 4px;
+      margin-left: 0; padding: 10px 16px 14px;
+      background: var(--headerbar-bg-color);
+      border-bottom: 1px solid var(--headerbar-shade-color);
+      box-shadow: 0 14px 28px rgb(0 0 0 / 14%);
+    }
+    .nav .links.open { display: flex; }
+    .nav .links a.navlink { padding: 12px; font-size: var(--type-md); }
+    .nav .links .sep { display: none; }
+  }
 
   .btn-donate {
     display: inline-flex; align-items: center; gap: 7px;
@@ -390,12 +413,19 @@
       <img class="brand-icon" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/app/data/icons/hicolor/scalable/apps/io.github.todevelopers.GseProfiler.svg" alt="" width="30" height="30">
       <span class="name">GSE Profiler</span>
     </a>
-    <nav class="links">
-      <a class="navlink hide-sm" href="#features">Features</a>
-      <a class="navlink hide-sm" href="#closer">A closer look</a>
+    <nav class="links" id="nav-links">
+      <a class="navlink" href="#features">Features</a>
+      <a class="navlink" href="#closer">A closer look</a>
       <a class="navlink" href="#install">Install</a>
-      <a class="navlink hide-sm" href="https://github.com/todevelopers/gseprofiler" target="_blank" rel="noopener">Source</a>
+      <a class="navlink" href="https://github.com/todevelopers/gseprofiler" target="_blank" rel="noopener">Source</a>
     </nav>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-links">
+      <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true">
+        <rect x="1.5" y="3" width="13" height="1.8" rx="0.9"></rect>
+        <rect x="1.5" y="7.1" width="13" height="1.8" rx="0.9"></rect>
+        <rect x="1.5" y="11.2" width="13" height="1.8" rx="0.9"></rect>
+      </svg>
+    </button>
   </div>
 </header>
 
@@ -774,6 +804,31 @@
 
 <script>
   document.documentElement.classList.add('js');
+
+  // Mobile nav: hamburger toggles the collapsible link dropdown
+  (function () {
+    var toggle = document.getElementById('nav-toggle');
+    var links = document.getElementById('nav-links');
+    if (!toggle || !links) return;
+    function setOpen(open) {
+      links.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    toggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setOpen(!links.classList.contains('open'));
+    });
+    // Close after picking a destination, on outside click, or Escape
+    links.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () { setOpen(false); });
+    });
+    document.addEventListener('click', function (e) {
+      if (!links.contains(e.target) && e.target !== toggle) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
 
   // Profiler visualisation switcher
   (function () {
