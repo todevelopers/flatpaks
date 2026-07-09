@@ -99,11 +99,14 @@
   .nav-toggle {
     display: none; align-items: center; justify-content: center;
     width: 36px; height: 36px; margin-left: auto; flex: none;
+    padding: 0; border: none; background: transparent; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
     border-radius: var(--button-radius); color: var(--window-fg-color);
     transition: background-color 120ms ease-out;
   }
   .nav-toggle:hover { background: var(--hover-color); }
-  .nav-toggle svg { width: 20px; height: 20px; }
+  .nav-toggle:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+  .nav-toggle svg { width: 16px; height: 16px; display: block; }
   @media (max-width: 720px) {
     .nav-toggle { display: inline-flex; }
     .nav .links {
@@ -394,6 +397,12 @@
   footer .flinks a { font-size: var(--type-base); opacity: 0.75; font-weight: 500; }
   footer .flinks a:hover { opacity: 1; color: var(--accent-color); }
   footer .fine { margin-top: 18px; font-size: var(--type-sm); opacity: 0.5; line-height: 1.5; max-width: 70ch; }
+  /* Centre the footer on mobile (same breakpoint as the hamburger nav) */
+  @media (max-width: 720px) {
+    footer .frow { flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+    footer .flinks { margin-left: 0; justify-content: center; }
+    footer .fine { text-align: center; max-width: 60ch; margin-left: auto; margin-right: auto; }
+  }
 
   /* ---------- Subtle entrance (scroll-driven, degrades to visible) ---------- */
   @media (prefers-reduced-motion: no-preference) {
@@ -420,10 +429,8 @@
       <a class="navlink" href="https://github.com/todevelopers/gseprofiler" target="_blank" rel="noopener">Source</a>
     </nav>
     <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-links">
-      <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true">
-        <rect x="1.5" y="3" width="13" height="1.8" rx="0.9"></rect>
-        <rect x="1.5" y="7.1" width="13" height="1.8" rx="0.9"></rect>
-        <rect x="1.5" y="11.2" width="13" height="1.8" rx="0.9"></rect>
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+        <path d="m 2 3 c -0.554688 0 -1 0.445312 -1 1 s 0.445312 1 1 1 h 12 c 0.554688 0 1 -0.445312 1 -1 s -0.445312 -1 -1 -1 z m 0 4 c -0.554688 0 -1 0.445312 -1 1 s 0.445312 1 1 1 h 12 c 0.554688 0 1 -0.445312 1 -1 s -0.445312 -1 -1 -1 z m 0 4 c -0.554688 0 -1 0.445312 -1 1 s 0.445312 1 1 1 h 12 c 0.554688 0 1 -0.445312 1 -1 s -0.445312 -1 -1 -1 z m 0 0"></path>
       </svg>
     </button>
   </div>
