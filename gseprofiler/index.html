@@ -76,9 +76,28 @@
   .hero-icon { width: 88px; height: 88px; display: block; margin: 0 auto 26px;
     filter: drop-shadow(0 8px 18px rgb(0 0 0 / 22%)); }
 
+  /* ---------- News bar (AdwBanner-style) ---------- */
+  .news-bar { display: block; background: var(--accent-bg-color); color: var(--accent-fg-color);
+    transition: background-color 120ms ease-out; }
+  .news-bar:hover { background: color-mix(in srgb, var(--accent-bg-color) 90%, #000); }
+  .news-bar:focus-visible { outline: 2px solid var(--accent-fg-color); outline-offset: -3px; }
+  .news-bar-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+    gap: 6px 10px; padding: 11px 0; font-size: var(--type-sm); font-weight: 700; text-align: center; }
+  .news-bar-tag { display: inline-flex; align-items: center; justify-content: center; flex: none;
+    height: 20px; padding: 0 9px; line-height: 1; border-radius: var(--pill-radius);
+    background: rgb(255 255 255 / 24%);
+    font-size: var(--type-xs); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+  .news-bar-go { width: 13px; height: 13px; flex: none; }
+  @media (max-width: 480px) {
+    .news-bar-row { padding: 9px 0; font-size: var(--type-xs); }
+  }
+
+  /* ---------- Sticky stack: news bar + nav scroll together and pin as one ---------- */
+  .sticky-top { position: sticky; top: 0; z-index: 50; }
+
   /* ---------- Header / nav ---------- */
   .nav {
-    position: sticky; top: 0; z-index: 50;
+    position: relative;
     background: color-mix(in srgb, var(--headerbar-bg-color) 86%, transparent);
     -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
     border-bottom: 1px solid var(--headerbar-shade-color);
@@ -183,7 +202,10 @@
     filter: drop-shadow(0 24px 60px rgb(0 0 0 / 18%)); }
 
   /* ---------- Section scaffolding ---------- */
-  section { scroll-margin-top: 72px; }
+  /* Offset by the sticky news-bar + nav stack height so anchor jumps (#install, #features)
+     don't land partly hidden underneath it. */
+  section { scroll-margin-top: 114px; }
+  @media (max-width: 480px) { section { scroll-margin-top: 106px; } }
   .band { padding: 84px 0; }
   .eyebrow { font-size: var(--type-sm); font-weight: 700; letter-spacing: 0.06em;
     text-transform: uppercase; color: var(--accent-color); }
@@ -417,27 +439,41 @@
 </head>
 <body>
 
-<!-- ============ NAV ============ -->
-<header class="nav">
-  <div class="wrap bar">
-    <a class="brand" href="#top">
-      <img class="brand-icon" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/app/data/icons/hicolor/scalable/apps/io.github.todevelopers.GseProfiler.svg" alt="" width="30" height="30">
-      <span class="name">GSE Profiler</span>
-    </a>
-    <nav class="links" id="nav-links">
-      <a class="navlink" href="#features">Features</a>
-      <a class="navlink" href="#closer">A closer look</a>
-      <a class="navlink" href="#install">Install</a>
-      <a class="navlink" href="https://github.com/todevelopers/gseprofiler" target="_blank" rel="noopener">Source</a>
-      <a class="btn-donate" href="https://ko-fi.com/tommygunx89" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M15 5.766a3.763 3.763 0 00-3.77-3.757c-1.37 0-2.57.73-3.23 1.822a3.77 3.77 0 00-3.23-1.822A3.763 3.763 0 001 5.766a3.74 3.74 0 001.19 2.738h-.001L7.914 14l5.898-5.496h-.002A3.739 3.739 0 0015 5.766"></path></svg>Donate</a>
-    </nav>
-    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-links">
-      <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-        <path d="m 2 3 c -0.554688 0 -1 0.445312 -1 1 s 0.445312 1 1 1 h 12 c 0.554688 0 1 -0.445312 1 -1 s -0.445312 -1 -1 -1 z m 0 4 c -0.554688 0 -1 0.445312 -1 1 s 0.445312 1 1 1 h 12 c 0.554688 0 1 -0.445312 1 -1 s -0.445312 -1 -1 -1 z m 0 4 c -0.554688 0 -1 0.445312 -1 1 s 0.445312 1 1 1 h 12 c 0.554688 0 1 -0.445312 1 -1 s -0.445312 -1 -1 -1 z m 0 0"></path>
-      </svg>
-    </button>
-  </div>
-</header>
+<!-- ============ STICKY TOP (news bar + nav stick together) ============ -->
+<div class="sticky-top">
+  <!-- ============ NEWS BAR ============ -->
+  <a class="news-bar" href="https://flatpark.org/apps/io.github.todevelopers.GseProfiler/" target="_blank" rel="noopener">
+    <span class="wrap news-bar-row">
+      <span class="news-bar-tag">New</span>
+      <span>GSE Profiler is now available on <strong>FlatPark</strong></span>
+      <span class="ad-icon news-bar-go" aria-hidden="true"><svg height="100%" viewBox="0 0 16 16" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <path d="m 4 2 c 0 -0.265625 0.105469 -0.519531 0.292969 -0.707031 c 0.390625 -0.390625 1.023437 -0.390625 1.414062 0 l 6 6 c 0.1875 0.1875 0.292969 0.441406 0.292969 0.707031 s -0.105469 0.519531 -0.292969 0.707031 l -6 6 c -0.390625 0.390625 -1.023437 0.390625 -1.414062 0 c -0.1875 -0.1875 -0.292969 -0.441406 -0.292969 -0.707031 s 0.105469 -0.519531 0.292969 -0.707031 l 5.292969 -5.292969 l -5.292969 -5.292969 c -0.1875 -0.1875 -0.292969 -0.441406 -0.292969 -0.707031 z m 0 0" fill="currentColor"></path>
+</svg></span>
+    </span>
+  </a>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav">
+    <div class="wrap bar">
+      <a class="brand" href="#top">
+        <img class="brand-icon" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/app/data/icons/hicolor/scalable/apps/io.github.todevelopers.GseProfiler.svg" alt="" width="30" height="30">
+        <span class="name">GSE Profiler</span>
+      </a>
+      <nav class="links" id="nav-links">
+        <a class="navlink" href="#features">Features</a>
+        <a class="navlink" href="#closer">A closer look</a>
+        <a class="navlink" href="#install">Install</a>
+        <a class="navlink" href="https://github.com/todevelopers/gseprofiler" target="_blank" rel="noopener">Source</a>
+        <a class="btn-donate" href="https://ko-fi.com/tommygunx89" target="_blank" rel="noopener"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M15 5.766a3.763 3.763 0 00-3.77-3.757c-1.37 0-2.57.73-3.23 1.822a3.77 3.77 0 00-3.23-1.822A3.763 3.763 0 001 5.766a3.74 3.74 0 001.19 2.738h-.001L7.914 14l5.898-5.496h-.002A3.739 3.739 0 0015 5.766"></path></svg>Donate</a>
+      </nav>
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-links">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+          <path d="m 2 3 c -0.554688 0 -1 0.445312 -1 1 s 0.445312 1 1 1 h 12 c 0.554688 0 1 -0.445312 1 -1 s -0.445312 -1 -1 -1 z m 0 4 c -0.554688 0 -1 0.445312 -1 1 s 0.445312 1 1 1 h 12 c 0.554688 0 1 -0.445312 1 -1 s -0.445312 -1 -1 -1 z m 0 4 c -0.554688 0 -1 0.445312 -1 1 s 0.445312 1 1 1 h 12 c 0.554688 0 1 -0.445312 1 -1 s -0.445312 -1 -1 -1 z m 0 0"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+</div>
 
 <a id="top"></a>
 
