@@ -184,19 +184,6 @@
   .btn.ghost:hover { background: var(--hover-color); }
   .hero .subnote { margin-top: 16px; font-size: var(--type-sm); opacity: 0.55; }
 
-  /* Latest-release pill (filled from the GitHub Releases API at runtime) */
-  .hero-ver {
-    display: none; align-items: center; gap: 8px;
-    margin: 16px auto 0; width: fit-content; height: 30px; padding: 0 14px;
-    border-radius: var(--pill-radius); font-size: var(--type-sm); font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    background: color-mix(in srgb, var(--accent-bg-color) 12%, transparent);
-    color: var(--accent-color); transition: background-color 120ms ease-out;
-  }
-  .hero-ver.loaded { display: inline-flex; }
-  .hero-ver:hover { background: color-mix(in srgb, var(--accent-bg-color) 20%, transparent); }
-  .hero-ver .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success-color); flex: none; }
-
   .shot { margin: 48px auto 0; max-width: 1000px; }
   .shot img { width: 100%; height: auto; display: block;
     filter: drop-shadow(0 24px 60px rgb(0 0 0 / 18%)); }
@@ -481,10 +468,6 @@
 <section class="hero">
   <div class="wrap">
     <img class="hero-icon" src="https://raw.githubusercontent.com/todevelopers/gseprofiler/main/app/data/icons/hicolor/scalable/apps/io.github.todevelopers.GseProfiler.svg" alt="GSE Profiler app icon" width="88" height="88">
-    <a class="hero-ver" href="https://github.com/todevelopers/gseprofiler/releases/latest" target="_blank" rel="noopener" data-latest-version data-version-prefix="Latest stable" data-fallback="View the latest release">
-      <span class="dot"></span>
-      <span data-version-text>Latest stable</span>
-    </a>
     <h1>Profile GNOME Shell extensions<br>as they run.</h1>
     <p class="lede">A developer toolkit for extension authors and testers. GSE Profiler attaches to the running shell and gives you live function timing, structured log filtering, and object inspection, all from a native GTK4 interface built for modern GNOME, with zero changes to your extension's code.</p>
     <div class="cta-row">
